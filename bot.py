@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 3  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 4  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -87,6 +87,7 @@ BUTTONS = [
     ("return_home_button", "Return Home"),
     ("upgrade_more_button", "Upgrade More (wall selected)  - walls"),
     ("upgrade_more_disabled", "Upgrade More greyed out (only wall of its level)  - walls"),
+    ("wall_upgrade_hammers", "Upgrade More bar: double-hammer icon  - walls"),
     ("wall_gold_upgrade_button", "Upgrade More bar: gold Upgrade  - walls"),
     ("wall_elixir_upgrade_button", "Upgrade More bar: elixir Upgrade  - walls"),
     ("wall_okay_button", "Upgrade Walls dialog: Okay  - walls"),
@@ -1397,6 +1398,39 @@ class Bot:
         self.close_popups()
         return False
 
+    def bar_price(self, frame, btn):
+        """Price printed above an Upgrade button: white when affordable, red when not."""
+        k = frame.shape[1] / 1920
+        c = crop(frame, (btn[0] - int(100 * k), btn[1] - int(78 * k), btn[0] + int(60 * k), btn[1] - int(33 * k)), 0)
+        if c is None:
+            return None
+        hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
+        b, g, r = (c[:, :, i].astype(int) for i in range(3))
+        white = (hsv[:, :, 2] > hsv[:, :, 2].max() * 0.8) & (hsv[:, :, 1] < 70)
+        red = (r > 170) & (r - g > 70) & (r - b > 50)
+        return read_digit_blobs(white | red)
+
+    def upgrade_pair(self, frame):
+        """The Upgrade More bar's two double-hammer Upgrade buttons as (gold, elixir) - gold is always the left one.
+        Matched on the hammers only, so the price (1,500,000 / 5,000,000 ...) doesn't matter. None if not showing."""
+        t = self.v.template("wall_upgrade_hammers")
+        if t is None:
+            return None
+        small = cv2.resize(frame, None, fx=SCALE, fy=SCALE, interpolation=cv2.INTER_AREA)
+        res = cv2.matchTemplate(small, t[2], cv2.TM_CCOEFF_NORMED)
+        th, tw = t[1]
+        hits = []
+        for _ in range(2):
+            _, v, _, loc = cv2.minMaxLoc(res)
+            if v < 0.8:
+                break
+            hits.append((int(loc[0] / SCALE + tw / 2), int(loc[1] / SCALE + th / 2)))
+            x0, y0 = loc
+            res[max(0, y0 - th // 4):y0 + th // 4, max(0, x0 - tw // 2):x0 + tw // 2] = -1  # next peak elsewhere
+        if len(hits) != 2 or abs(hits[0][0] - hits[1][0]) < 80 * frame.shape[1] / 1920:
+            return None
+        return tuple(sorted(hits))
+
     def select_wall(self):
         """Open the builder list, tap a 'Wall' row once the list has stopped sliding, close the list. Returns
         the Upgrade More button if a wall really is selected (only walls have it), else None."""
@@ -1432,6 +1466,8 @@ class Bot:
         end = time.time() + 3  # only walls have 'Upgrade More' (greyed/red when it's the only wall of its level)
         while True:
             f = self.shot()
+            if self.upgrade_pair(f):  # Upgrade More bar already open: its greyed 'Remove Wall' isn't Upgrade More
+                return "open"
             hit = self.find(f, "upgrade_more_button") or self.find(f, "upgrade_more_disabled")
             if hit or time.time() > end:
                 return hit
@@ -1446,15 +1482,15 @@ class Bot:
         if balance is None and region:
             balance = white_number(frame, region)
         for attempt in range(3):  # a slid list can land the tap on the wrong building: just try again
-            more = self.select_wall()
+            more = "open" if self.upgrade_pair(frame) else self.select_wall()
             if more:
                 break
             self.log(f"Wall upgrade: didn't get a wall selected (attempt {attempt + 1}/3) - retrying.")
         else:
             return self.wall_fail("couldn't select a wall", self.shot())
         f = self.shot()
-        lab = f[more[1] + 10:more[1] + 50, more[0] - 70:more[0] + 70].astype(int)
-        disabled = ((lab[:, :, 2] > 170) & (lab[:, :, 2] - lab[:, :, 1] > 70) & (lab[:, :, 2] - lab[:, :, 0] > 50)).mean() > 0.08
+        lab = f[more[1] + 10:more[1] + 50, more[0] - 70:more[0] + 70].astype(int) if more != "open" else None
+        disabled = lab is not None and ((lab[:, :, 2] > 170) & (lab[:, :, 2] - lab[:, :, 1] > 70) & (lab[:, :, 2] - lab[:, :, 0] > 50)).mean() > 0.08
         if disabled:
             # Only one wall of this level: 'Upgrade More' is greyed out (red text), so upgrade this single wall with
             # the bar's own gold (left) / elixir (right) Upgrade button, which sits a fixed distance to the right.
@@ -1469,11 +1505,24 @@ class Bot:
             self.tap((bx, more[1] - int(40 * k)), 1.5)
         else:
             want = None
-            self.tap(more, 1.2)
-            hit = self.wait_for(f"wall_{cur}_upgrade_button", 4)
-            if not hit:
-                return self.wall_fail(f"'wall_{cur}_upgrade_button' not found", self.shot())
-            self.tap(hit, 1.2)
+            if more != "open":
+                self.tap(more, 1.2)
+            pair, end = None, time.time() + 4
+            while not pair and time.time() < end:
+                pair = self.upgrade_pair(self.shot())
+                if not pair:
+                    self.sleep(0.4)
+            if not pair:
+                return self.wall_fail("Upgrade More bar's Upgrade buttons not found", self.shot())
+            btn = pair[0] if cur == "gold" else pair[1]
+            for _ in range(20):  # Upgrade More selects a whole row: drop walls (-1) until it's affordable
+                f = self.shot()
+                cost = self.bar_price(f, btn)
+                if cost is None or balance is None or cost <= balance:
+                    break
+                k = f.shape[1] / 1920  # bar layout is fixed: Remove Wall, Add +10, Add +1, gold Upgrade, elixir Upgrade
+                self.tap((pair[0][0] - int(612 * k), pair[0][1] + int(12 * k)), 0.7)
+            self.tap(btn, 1.2)
         frame = self.shot()
         ok = self.find(frame, "wall_okay_button")
         if ok:  # 'Upgrade Walls' dialog: check it says Walls + this currency + a price, never gems

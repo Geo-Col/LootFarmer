@@ -1,7 +1,7 @@
 {
- "version": 3,
+ "version": 4,
  "files": {
-  "bot.py": "e0f07b8b61e6245eaa32f4ba015b38707993c19f53af8b74e9b5968c1b47b9c5",
+  "bot.py": "8e21012a001cabafa573cdc1642fdbf2de1ec57539ec7936068036ebcc57eb37",
   "setup.ps1": "2ef2b8485cb8aecc277dafc238afa8002093f611728e017e8124fd53c7faf25f",
   "Setup.bat": "3d3ea502d691eccb7207f2d7388826a07c48f3f0c8eafa6c0a96df51b88bb8d3",
   "README.txt": "788f677c3217c29b371ca97eb09ccf5ff83a2aba706e8f1162f054363a6ab3b1",
@@ -25,6 +25,7 @@
   "templates/upgrade_more_disabled.png": "639c5a4898e7448babbdd8d221c6e6e35175608c815ce1e90154d1a60db4e8d4",
   "templates/wall_elixir_upgrade_button.png": "04258c369dd42479c57ab5200875beb560a54d793ea2f2673c351f5daadc3c81",
   "templates/wall_gold_upgrade_button.png": "c57bf05bb697c249cadc51995924a4e4e8e13218a0d32f26c980fb09f5904b97",
-  "templates/wall_okay_button.png": "7cea4834c382e5f135eb80d00865a74a3a526600bf421f3f0092ebeac73628bf"
+  "templates/wall_okay_button.png": "7cea4834c382e5f135eb80d00865a74a3a526600bf421f3f0092ebeac73628bf",
+  "templates/wall_upgrade_hammers.png": "95a713ab0539e3572f77b6b633cb2eb6e5ed2aff76c50236264adeb291d81bd1"
  }
 }
