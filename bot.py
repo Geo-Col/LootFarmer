@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 7  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 8  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -813,7 +813,8 @@ def troop_bar(frame):
         else:
             hh = cv2.cvtColor(frame[top:top + 45, a + 6:a + (b - a) // 3], cv2.COLOR_BGR2HSV)
             hdr = hh[:, :, 0][(hh[:, :, 1] > 90) & (hh[:, :, 2] > 90)]
-            kind = "spell" if len(hdr) and np.median(hdr) > 122 else "troop"
+            hue = np.median(hdr) if len(hdr) else 0  # blue troop ~104, purple spell ~126, red SUPER troop ~179
+            kind = "spell" if 115 <= hue <= 150 else "troop"
         out.append(((a + b) // 2, (ya + yb) // 2, kind, cnt))
     return out
 
