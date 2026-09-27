@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 12  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 13  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -97,6 +97,22 @@ BUTTONS = [
     ("switch_account_button", "Blue switch-account button  - accounts"),
     ("supercell_id_header", "Supercell ID panel logo  - accounts"),
     ("lab_picker_title", "Lab 'Choose what to upgrade' title  - upgrades"),
+    ("guardians_title", "'Guardians' window title  - upgrades"),
+    ("bb_boat", "Boat's sail bubble (both villages)  - builder base"),
+    ("bb_attack_button", "Builder Base Attack! (axes)  - builder base"),
+    ("bb_find_now", "Builder Base Find Now!  - builder base"),
+    ("bb_return_home", "Builder Base Return Home  - builder base"),
+    ("bb_elixir_bubble", "Builder Base elixir bubble  - builder base"),
+    ("bb_gold_bubble", "Builder Base gold bubble  - builder base"),
+    ("bb_cart_title", "Elixir Cart window title  - builder base"),
+    ("bb_cart_collect", "Elixir Cart green Collect  - builder base"),
+    ("bb_bonus_title", "'Star Bonus!' popup title  - builder base"),
+    ("bb_bonus_okay", "Star Bonus popup Okay  - builder base"),
+    ("bb_gem_bubble", "Gem Mine gem bubble  - builder base"),
+    ("bb_clock_bubble", "Clock Tower boost-ready bubble  - builder base"),
+    ("bb_free_boost", "Clock Tower 'Free Boost!' button  - builder base"),
+    ("bb_boost_title", "'Free Boost!' window title  - builder base"),
+    ("bb_boost_button", "'Free Boost!' window green Boost  - builder base"),
 ]
 REQUIRED_BUTTONS = [n for n, _ in BUTTONS[:7]]
 OCR_REGIONS = [
@@ -125,10 +141,13 @@ STATES = [
     ("find_match_button", "MENU"),
     ("surrender_button", "BATTLE"),
     ("attack_button", "HOME"),
+    ("bb_return_home", "BBEND"),   # started / restarted while on the Builder Base: finish up and sail home
+    ("bb_attack_button", "BBHOME"),
 ]
 STATE_LABELS = {
     None: "Unknown screen", "HOME": "Home village", "MENU": "Attack menu", "ARMY": "Army screen",
     "SCOUT": "Scouting base", "BATTLE": "In battle", "CONFIRM": "Surrendering", "END": "Battle over",
+    "BBHOME": "Builder Base", "BBEND": "Builder Base battle over",
 }
 
 DEFAULTS = {
@@ -168,6 +187,12 @@ DEFAULTS = {
     "builder_upgrades_enabled": False,
     "skip_town_hall": True,
     "lab_upgrades_enabled": False,
+    "builder_base_enabled": False,  # visit the Builder Base on every account: collect, cart, upgrades, daily stars
+    "bb_visit_hours": 3,
+    "bb_attacks_enabled": True,
+    "bb_builder_upgrades": True,
+    "bb_lab_upgrades": True,
+    "bb_bonus_days": {},  # account -> date its daily Star Bonus was collected (no more attacks that day)
     "bank_spend_threshold": 15000000,
     "bank_scroll_duration_ms": 600,
     "bank_scroll_delay": 0.6,
@@ -238,6 +263,14 @@ SETTINGS = [
         ("bank_scroll_delay", "Pause after swipe (s)", float),
         ("bank_post_spend_delay", "Pause after purchase (s)", float),
     ]),
+    ("Builder Base", "Each account gets a visit by boat: collect the collectors and the Elixir Cart, then the "
+                     "switches below. Same on/off as the dashboard's Builder Base switch.", [
+        ("builder_base_enabled", "Visit the Builder Base", bool),
+        ("bb_attacks_enabled", "Attack until the daily Star Bonus", bool),
+        ("bb_builder_upgrades", "Builders: upgrade buildings / Battle Machine", bool),
+        ("bb_lab_upgrades", "Star Lab: research", bool),
+        ("bb_visit_hours", "Revisit each account every (h)", float),
+    ]),
     ("Accounts", "When every enabled builder + lab slot is busy (and walls are spent), switch to the next "
                  "Supercell ID account. All busy everywhere = keep farming here and re-check in 30 min.", [
         ("rotate_accounts", "Rotate accounts", bool),
@@ -296,6 +329,7 @@ def load_config():
         if not (cfg.get(k) and os.path.exists(cfg[k])) and os.path.exists(path):
             cfg[k] = path
     cfg["deploy_units"] = cfg.get("deploy_units") or []
+    cfg["bb_bonus_days"] = dict(cfg.get("bb_bonus_days") or {})
     cfg["discord_webhook"] = cfg.get("discord_webhook") or DEFAULTS["discord_webhook"]  # blank saved = the built-in
     player = r"C:\Program Files\BlueStacks_nxt\HD-Player.exe"
     if not os.path.isfile(cfg.get("emulator_exe_path") or "") and os.path.isfile(player):
@@ -720,9 +754,12 @@ def panel_box(frame):
     Returns (x0, x1, y0, y1) of its inside, or None if no list is open."""
     g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     cols = np.where((g >= 245).sum(axis=0) > g.shape[0] * 0.3)[0]
-    if len(cols) < 2 or cols[-1] - cols[0] < 250:
+    if len(cols) < 2:
         return None
-    x0, x1 = int(cols[0]), int(cols[-1])
+    right = cols[cols - cols[0] >= 250]  # the list's right border is the NEXT long white column, not the last
+    if len(right) == 0:                  # (the Builder Base has a white edge at the far right of the screen)
+        return None
+    x0, x1 = int(cols[0]), int(right[0])
     ys = np.where(g[:, x0] >= 245)[0]
     # the longest unbroken run is the list's own border (a button card below can line up with it)
     runs = np.split(ys, np.where(np.diff(ys) > 3)[0] + 1)
@@ -732,7 +769,11 @@ def panel_box(frame):
 
 # Top bar counters sit in fixed places (1920x1080 layout) whatever icon/skin shows (builder, goblin, ...).
 TOP_BAR = {"lab": ((662, 61), (680, 30, 820, 95), (600, 20, 680, 105)),
-           "builder": ((902, 70), (955, 30, 1060, 95), (840, 20, 920, 105))}  # tap point, counter, icon
+           "builder": ((902, 70), (955, 30, 1060, 95), (840, 20, 920, 105)),  # tap point, counter, icon
+           "bb_lab": ((860, 60), (840, 30, 940, 95), (750, 20, 830, 105)),
+           "bb_builder": ((1040, 60), (1080, 30, 1185, 95), (990, 20, 1075, 105))}
+KIND_NAMES = {"builder": "Builder", "lab": "Lab", "bb_builder": "Builder Base builder", "bb_lab": "Star Lab"}
+BB_STARS = (95, 866, 200, 910)  # the 'x/y' daily star counter on the Builder Base Attack button
 
 
 def top_bar(frame, kind):
@@ -863,6 +904,21 @@ def troop_bar(frame):
     return out
 
 
+def confirm_price(frame, hit):
+    """Price on the upgrade window's green Confirm (hit = its 'Confirm' label). White normally; yellow when a
+    discount applies - then the old price is printed struck-out underneath, so only the line right under the
+    label is read."""
+    k = frame.shape[1] / 1920
+    v = white_number(frame, (hit[0] - int(160 * k), hit[1] + int(12 * k), hit[0] + int(130 * k), hit[1] + int(75 * k)))
+    if v:
+        return v
+    c = crop(frame, (hit[0] - int(160 * k), hit[1] + int(8 * k), hit[0] + int(130 * k), hit[1] + int(56 * k)), 0)
+    if c is None:
+        return None
+    hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
+    return read_digit_blobs((hsv[:, :, 0] >= 18) & (hsv[:, :, 0] <= 35) & (hsv[:, :, 1] > 120) & (hsv[:, :, 2] > 200))
+
+
 def available_slots(frame):
     """(normal, goblin) free slots from an open builder/lab list's 'Available!' rows. The goblin builder /
     researcher (costs gems) has a green face next to its row; the normal builder/researcher doesn't."""
@@ -960,6 +1016,7 @@ class Bot:
         self._bank_backoff = {}
         self._upgrade_backoff = {}
         self._busy_until = {}  # kind -> time: 'only the goblin is free' counts as busy for account rotation
+        self._bb_next = {}     # account -> time of its next Builder Base visit
         self._acc_idx = -1
         self.loot = {}        # account -> [gold, elixir, dark, attacks] farmed this session
         self._names = []      # account names seen (misreads snap to these)
@@ -1004,7 +1061,7 @@ class Bot:
 
     def find(self, frame, name):
         hit = self.v.find(frame, name, self.cfg["match_confidence"])
-        if hit and name == "attack_button" and not self.v.undimmed(frame, name, hit):
+        if hit and name in ("attack_button", "bb_attack_button") and not self.v.undimmed(frame, name, hit):
             return None  # a popup/panel is darkening the village: not really on the home screen
         return hit
 
@@ -1164,6 +1221,8 @@ class Bot:
                 return  # screen changed; look again
         if self.cfg["bank_spend_enabled"] and self.spend_bank(storage):
             return  # screen changed while buying; look again
+        if self.cfg["builder_base_enabled"] and self.builder_base():
+            return  # back home; look again
         if self.account_done(frame) and self.switch_account():
             return
         self.attack_now()
@@ -1173,6 +1232,17 @@ class Bot:
 
     def on_army(self, frame, prev):
         self.tap(self.hits["confirm_attack_button"], self.cfg["matchmaking_settle_delay"])
+
+    def on_bbend(self, frame, prev):
+        self.tap(self.hits["bb_return_home"], 3.0)
+
+    def on_bbhome(self, frame, prev):
+        """On the Builder Base outside a visit (a restart, a crash, a stray boat tap): collect and sail home."""
+        self.bb_bonus(self._last_name or "?")
+        self.bb_collect()
+        if not self.take_boat("home"):
+            self.log("On the Builder Base and couldn't take the boat home - relaunching the game.", "warn")
+            self.recover_game("stuck on the Builder Base")
 
     def on_end(self, frame, prev):
         self.tap(self.hits["return_home_button"], self.cfg["return_home_delay"])
@@ -1615,6 +1685,221 @@ class Bot:
                  + (f" ({balance:,} -> {after:,})." if balance is not None and after is not None else "."), "ok")
         return True  # the wall bar left open doesn't block Attack
 
+    # --- Builder Base ---
+    def at_village(self, f):
+        return self.find(f, "attack_button") or self.find(f, "bb_attack_button")
+
+    def matches(self, frame, name, conf=0.8):
+        """Every place a (small) template shows, e.g. all collector bubbles."""
+        t = self.v.template(name)
+        if t is None:
+            return []
+        small = cv2.resize(frame, None, fx=SCALE, fy=SCALE, interpolation=cv2.INTER_AREA)
+        r = cv2.matchTemplate(small, t[2], cv2.TM_CCOEFF_NORMED)
+        h, w = t[1]
+        out = []
+        for y, x in sorted(zip(*np.where(r >= conf)), key=lambda p: -r[p]):
+            xy = (int(x / SCALE + w / 2), int(y / SCALE + h / 2))
+            if all(abs(xy[0] - a) > 30 or abs(xy[1] - b) > 30 for a, b in out):
+                out.append(xy)
+        return out
+
+    def take_boat(self, to):
+        """Home <-> Builder Base: find the boat's sail bubble and tap it. True once the other village shows.
+        Where the boat is depends on the village and its level (a big Builder Base has it bottom-right, by the
+        Outpost), and the camera may be anywhere after an upgrade - so pan the usual way first, then sweep."""
+        want = "bb_attack_button" if to == "builder" else "attack_button"
+        L, R, U, D = (600, 500, 1300, 500), (1300, 500, 600, 500), (960, 300, 960, 700), (960, 700, 960, 300)
+        usual = [(700, 450, 1300, 250)] * 3 if to == "builder" else [(1300, 300, 800, 600)] * 3
+        sweep = usual + [L] * 3 + [U] * 2 + [R] * 5 + [D] * 4 + [L] * 5 + [U] * 2
+        for _ in range(2):
+            boat = self.find(self.shot(), "bb_boat")
+            for mv in sweep:
+                if boat:
+                    break
+                self.adb.swipe(*mv, 450)
+                self.sleep(0.9)
+                boat = self.find(self.shot(), "bb_boat")
+            if boat:
+                if to == "home":
+                    self.bb_collect()
+                    boat = self.find(self.shot(), "bb_boat") or boat
+                self.tap(boat, 2.0)
+                if self.wait_for(want, 25, poll=1.0):
+                    self.sleep(1.0)
+                    return True
+            self.back_to_village()
+        cv2.imwrite(os.path.join(BASE_DIR, "debug_boat.png"), self.shot())
+        return False
+
+    def bb_collect(self):
+        """Tap every gold / elixir / gem bubble. One of the elixir bubbles is the Elixir Cart: its window gets Collect."""
+        f = self.shot()
+        H, W = f.shape[:2]
+        # only bubbles in the open middle: one sitting over the edge buttons (Season Pass, Attack, Shop, the
+        # resource bars...) would tap that button instead. It gets collected another time.
+        safe = lambda p: 0.13 * W < p[0] < 0.87 * W and 0.11 * H < p[1] < 0.76 * H
+        for xy in filter(safe, self.matches(f, "bb_elixir_bubble", 0.7) + self.matches(f, "bb_gold_bubble", 0.7)
+                         + self.matches(f, "bb_gem_bubble", 0.7)):
+            self.tap(xy, 1.0)
+            f = self.shot()
+            if self.find(f, "bb_cart_title"):
+                btn = self.find(f, "bb_cart_collect")
+                if btn:
+                    self.tap(btn, 1.2)
+                    self.log("Builder Base: collected the Elixir Cart.", "ok")
+                self.adb.back()
+                self.sleep(1.0)
+
+    def bb_bonus(self, name):
+        """Collect the 'Star Bonus!' popup if it's showing. True if one was collected just now."""
+        f = self.shot()
+        if not self.find(f, "bb_bonus_title"):
+            return False
+        ok = self.find(f, "bb_bonus_okay")
+        if ok:
+            self.tap(ok, 1.5)
+        else:  # never a blind tap: Back closes the popup (the bonus is already credited)
+            self.adb.back()
+            self.sleep(1.5)
+        self.log(f"Builder Base: Star Bonus collected ({name}).", "ok")
+        return True
+
+    def bb_clock_boost(self):
+        """The Clock Tower's free boost (everything 10x faster for ~30 min, free once per 22h). Its bubble only
+        shows when it's ready; only a button that says 'Free Boost!' is pressed - never the gem one."""
+        bub = self.find(self.shot(), "bb_clock_bubble")
+        if not bub:
+            return
+        self.tap(bub, 1.5)
+        free = self.wait_for("bb_free_boost", 3)
+        if free:
+            self.tap(free, 1.5)
+            if self.wait_for("bb_boost_title", 3):
+                btn = self.find(self.shot(), "bb_boost_button")
+                if btn:
+                    self.tap(btn, 1.5)
+                    self.log("Builder Base: Clock Tower free boost started (10x speed).", "ok")
+        self.back_to_village()
+
+    def bb_stars(self, f):
+        """(earned, needed) of today's star bonus from the Builder Base Attack button, or None."""
+        return read_counter(f, BB_STARS)
+
+    def bb_attack(self):
+        """One Builder Base battle: Attack -> Find Now -> drop every card on the open ground at the left ->
+        Battle Machine ability -> wait for Return Home. Builder Base bases can't be skipped; loot isn't read."""
+        for _ in range(2):  # the first tap only deselects a building that's still selected
+            self.tap(self.find(self.shot(), "bb_attack_button") or (125, 955), 1.5)
+            find = self.wait_for("bb_find_now", 4)
+            if find:
+                break
+        if not find:
+            return self.log("Builder Base: Find Now didn't show.", "warn")
+        self.tap(find, 1.0)
+        cards, end = [], time.time() + 40
+        while not cards and time.time() < end:  # matchmaking, then the battle screen with the troop bar
+            self.sleep(1.5)
+            cards = [c for c in troop_bar(self.shot()) if c[2] in ("single", "troop")]
+        if not cards:
+            return self.log("Builder Base: no battle screen after Find Now.", "warn")
+        self.bump("attacks")
+        self.bb_deploy(cards)
+        self.log(f"Builder Base: attacking with {len(cards)} cards.", "ok")
+        end = time.time() + 420  # up to two stages of 3 min each
+        while time.time() < end:  # the battle ends by itself once every troop is down (or the timer runs out)
+            self.sleep(6)
+            f = self.shot()
+            done = self.find(f, "bb_return_home")
+            if done:
+                self.tap(done, 3.0)
+                return self.wait_for("bb_attack_button", 15)
+            # 100% on stage 1 starts stage 2 with extra cards (+ the survivors): drop everything not used up.
+            # Tapping an already-deployed card is harmless (the Battle Machine's = its ability).
+            self.bb_deploy([c for c in troop_bar(f) if c[2] in ("single", "troop")])
+        self.log("Builder Base: battle didn't finish in time.", "warn")
+
+    def bb_deploy(self, cards):
+        a, b = (390, 380), (260, 600)  # left edge of the map: always outside the base, clear of the Boost buttons
+        for k, (x, y, kind, n) in enumerate(cards):
+            self.tap((x, y), self.cfg["deploy_select_delay"])
+            for i in range(n or 1):
+                self.adb.tap(*self.along(a, b, (k + i) % len(cards), len(cards)))
+            self.sleep(0.2)
+
+    def builder_base(self):
+        """Once per account every few hours: boat over, collect (incl. the Elixir Cart), keep the builders and
+        Star Lab busy, attack until today's star bonus is complete, collect again, boat back."""
+        name = self._last_name
+        for _ in range(3):  # just after arriving / switching, popups and the XP bar can hide the name for a moment
+            if name and name != "?":
+                break
+            self.sleep(1.0)
+            name = self.account_name(self.shot())
+        if time.time() < self._bb_next.get(name, 0):
+            return False
+        # unreadable name: visit anyway, but only block re-visits briefly (it may be a different account next time)
+        self._bb_next[name] = time.time() + (600 if name == "?" else 3600 * self.cfg["bb_visit_hours"])
+        self.log(f"Builder Base visit ({name}).", "ok")
+        if not self.take_boat("builder"):
+            self._bb_next[name] = time.time() + 1800
+            self.log("Builder Base: couldn't take the boat - trying again in 30 min (screen: debug_boat.png).", "warn")
+            return True
+        self.emit("state", f"Builder Base ({name})")
+        self.bb_collect()
+        self.bb_clock_boost()  # first, while the arrival view shows the whole base (its bubble is on the tower)
+        c = self.cfg
+        for rnd in range(2):  # upgrades before AND after the attacks (the loot may pay for more)
+            for kind in ("bb_builder", "bb_lab"):
+                if c["bb_builder_upgrades" if kind == "bb_builder" else "bb_lab_upgrades"]:
+                    for _ in range(3):
+                        if not self.free_slots(self.shot(), kind):
+                            break
+                        n = self.stats["upgrades"]
+                        self.upgrade_from_list(kind)
+                        if self.stats["upgrades"] == n:
+                            break
+            if rnd or not c["bb_attacks_enabled"]:
+                break
+            last = None
+            # Star Bonus: a popup each time the counter fills, several times a day. Once they're used up the counter
+            # just rolls over with no popup - then this account is done until tomorrow.
+            for _ in range(12):
+                if self.cfg["bb_bonus_days"].get(name) == time.strftime("%Y-%m-%d"):
+                    self.log("Builder Base: no Star Bonus left today - no attacks.")
+                    break
+                if self.bb_bonus(name):
+                    last = None  # the counter restarts after a bonus: that's not a 'rolled over without one'
+                f = self.shot()
+                if not self.find(f, "bb_attack_button"):  # still in a battle / its end screen: never press Back here
+                    done = self.wait_for("bb_return_home", 240, poll=3)
+                    if done:
+                        self.tap(done, 3.0)
+                    if not self.wait_for("bb_attack_button", 15):
+                        self.log("Builder Base: not back on the village - stopping the attacks.", "warn")
+                        break
+                    f = self.shot()
+                st = self.bb_stars(f)
+                if not st:  # the counter disappears from the Attack button once today's bonuses are all used
+                    if name != "?":
+                        self.cfg["bb_bonus_days"][name] = time.strftime("%Y-%m-%d")
+                        save_config(self.cfg)
+                    self.log("Builder Base: all of today's Star Bonuses collected - done until tomorrow.", "ok")
+                    break
+                if last and st[0] < last[0]:  # rolled over with no popup: today's bonus was already taken
+                    if name != "?":
+                        self.cfg["bb_bonus_days"][name] = time.strftime("%Y-%m-%d")
+                        save_config(self.cfg)
+                    self.log("Builder Base: star counter rolled over without a bonus - done for today.", "ok")
+                    break
+                last = st
+                self.log(f"Builder Base: stars {st[0]}/{st[1]} - attacking.")
+                self.bb_attack()
+            self._upgrade_backoff.pop("bb_builder", None)
+            self._upgrade_backoff.pop("bb_lab", None)
+        self.take_boat("home")  # the boat view also shows the Elixir Cart: collect it (new defense rewards) first
+        return True
+
     def storage_total(self, frame):
         """Gold + elixir + dark elixir, for checking an upgrade really took the resources."""
         regions = {"bank_dark_region": (1560, 225, 1830, 300), **self.cfg["ocr_regions"]}  # default: 1920x1080 bar
@@ -1628,7 +1913,7 @@ class Bot:
         for _ in range(6):
             f = self.shot()
             if (self.find(f, "wall_okay_button") or self.find(f, "lab_picker_title")
-                    or not self.find(f, "attack_button")):  # dialogs / game windows (they hide Attack)
+                    or not self.at_village(f)):  # dialogs / game windows (they hide Attack)
                 self.adb.back()
             elif panel_box(f) and icon:  # a dropdown list leaves Attack visible; its icon closes it
                 self.adb.tap(*icon)
@@ -1655,10 +1940,12 @@ class Bot:
         self.sleep(0.5)  # let the list finish sliding open before reading its 'Available!' rows
         normal, goblin = available_slots(self.shot())
         # Only refuse when the top bar agrees (goblin face / 0 free): one read of a still-moving list isn't enough.
+        if kind.startswith("bb_") and free_before:
+            normal = free_before  # the Builder Base list has no 'Available!' rows: trust the top bar counter
         if normal == 0 and not free_before:  # nothing free, or only the goblin (it costs gems) - never use it
             self._busy_until[kind] = self._upgrade_backoff[kind] = time.time() + 1800
             self.back_to_village(icon)
-            return self.log(f"{kind.title()}: " + ("only the goblin is free (costs gems) - not using it"
+            return self.log(f"{KIND_NAMES[kind]}: " + ("only the goblin is free (costs gems) - not using it"
                                                    if goblin else "no free slot") + ". Checking again in 30 min.")
         best, page, pages = None, 0, []
         for page in range(8):  # read the whole list, page by page
@@ -1680,7 +1967,7 @@ class Bot:
         if not best:
             self._upgrade_backoff[kind] = time.time() + 1200
             self.back_to_village(icon)
-            return self.log(f"{kind.title()}: nothing affordable right now - checking again in 20 min.")
+            return self.log(f"{KIND_NAMES[kind]}: nothing affordable right now - checking again in 20 min.")
         nm, price, _ = best
         self.tap(icon, 1.0)  # close + reopen = back at the top, then page down until it's on screen
         self.tap(icon, 1.3)  # (scrolling never lands in the same place twice, so search, don't count)
@@ -1697,39 +1984,75 @@ class Bot:
         if not match:
             self._upgrade_backoff[kind] = time.time() + 600
             self.back_to_village(icon)
-            return self.log(f"{kind.title()}: lost '{nm}' after re-opening the list - will retry.", "warn")
+            return self.log(f"{KIND_NAMES[kind]}: lost '{nm}' after re-opening the list - will retry.", "warn")
         self.tap(match[0][3], 1.6)
-        hit = self.find(self.shot(), "confirm_wall_upgrade_button")  # heroes/research: the window opens directly
+        if self.find(self.shot(), "guardians_title"):
+            f, k = self.shot(), self.shot().shape[1] / 1920
+            btn = next(((int(cx * k), int(823 * k)) for cx in (432, 960, 1490)
+                        if white_number(f, (int((cx - 130) * k), int(818 * k), int((cx + 95) * k), int(862 * k))) == price),
+                       None)
+            if not btn:
+                self._upgrade_backoff[kind] = time.time() + 1800
+                self.back_to_village(icon)
+                return self.log(f"{KIND_NAMES[kind]}: no Guardian shows {price:,} - backed out.", "warn")
+            self.tap(btn, 1.6)
+        hit, shown = self.resource_confirm(kind)  # heroes/research: the window opens directly
         if not hit:  # a building: the row only selected it - close the list, then its own Upgrade button
             if panel_box(self.shot()):
                 self.tap(icon, 1.2)
             up = self.wait_for("building_upgrade_button", 4)
             if up:
                 self.tap(up, 1.6)
-            hit = self.wait_for("confirm_wall_upgrade_button", 4)  # the GREEN resource Confirm only
+            end = time.time() + 4
+            while not hit and time.time() < end:
+                hit, shown = self.resource_confirm(kind)  # the GREEN resource Confirm only
         if not hit:
             self._upgrade_backoff[kind] = time.time() + 600
             self.back_to_village(icon)
-            return self.log(f"{kind.title()}: no green Confirm for '{nm}' - backed out.", "warn")
-        shown = white_number(self.shot(), (hit[0] - 160, hit[1] + 12, hit[0] + 130, hit[1] + 75))
+            return self.log(f"{KIND_NAMES[kind]}: no green Confirm for '{nm}' - backed out.", "warn")
         if shown != price:
             self._upgrade_backoff[kind] = time.time() + 600
             self.back_to_village(icon)
-            return self.log(f"{kind.title()}: Confirm shows {shown}, list said {price:,} - not risking it.", "warn")
+            return self.log(f"{KIND_NAMES[kind]}: Confirm shows {shown}, list said {price:,} - not risking it.", "warn")
         self.tap(hit, 2.0)
         self.back_to_village(icon)  # also cancels any 'all builders busy - use gems?' prompt
-        frame = self.shot()
-        after, free_after = self.storage_total(frame), self.free_slots(frame, kind)
-        spent = (before and after and any(b - a >= price * 0.9 for b, a in zip(before, after))) or (
-            free_before is not None and free_after is not None and free_after < free_before)
+        for _ in range(3):  # the counters can lag (or a selected building's bar hides them) for a moment
+            frame = self.shot()
+            after, free_after = self.storage_total(frame), self.free_slots(frame, kind)
+            spent = (before and after and any(b - a >= price * 0.9 for b, a in zip(before, after))) or (
+                free_before is not None and free_after is not None and free_after < free_before)
+            if spent:
+                break
+            self.sleep(1.5)
         if spent:
             self.bump("upgrades")
-            self.log(f"{'Upgrade' if kind == 'builder' else 'Research'} started: {nm} for {price:,}.", "ok")
+            self.log(f"{'Research' if kind.endswith('lab') else 'Upgrade'} started"
+                     f"{' (Builder Base)' if kind.startswith('bb_') else ''}: {nm} for {price:,}.", "ok")
             self._upgrade_backoff[kind] = 0  # another builder may be free - check next time home
         else:
             self._upgrade_backoff[kind] = time.time() + 1800
-            self.log(f"{kind.title()}: '{nm}' didn't start (all {'builders' if kind == 'builder' else 'lab slots'} "
+            self.log(f"{KIND_NAMES[kind]}: '{nm}' didn't start (all {'builders' if kind == 'builder' else 'lab slots'} "
                      f"busy?) - checking again in 30 min.")
+
+    def resource_confirm(self, kind):
+        """(button, price shown on it) of the upgrade window's green resource button, else (None, None).
+        Home: the captured Confirm image. Builder Base (purple elixir icon, so the image doesn't match): the big
+        green button in the bottom part of the screen. Either way the caller only taps it if the price equals the
+        list price, so a gem button can never be pressed."""
+        f = self.shot()
+        if not kind.startswith("bb_"):
+            hit = self.find(f, "confirm_wall_upgrade_button")
+            return (hit, confirm_price(f, hit)) if hit else (None, None)
+        H = f.shape[0]
+        hsv = cv2.cvtColor(f[int(H * 0.6):], cv2.COLOR_BGR2HSV)
+        m = ((hsv[:, :, 0] >= 35) & (hsv[:, :, 0] <= 75) & (hsv[:, :, 1] > 150) & (hsv[:, :, 2] > 150)).astype(np.uint8)
+        n, _, st, _ = cv2.connectedComponentsWithStats(m, 8)
+        big = [i for i in range(1, n) if st[i, 2] > f.shape[1] * 0.12 and st[i, 3] > H * 0.08]
+        if not big:
+            return None, None
+        x, y, w, h = st[max(big, key=lambda i: st[i, 4]), :4]
+        y += int(H * 0.6)
+        return (x + w // 2, y + h // 2), white_number(f, (x + 10, y + 10, x + int(w * 0.72), y + h - 10))
 
     def free_slots(self, frame, kind):
         """Normal builders / lab slots free. A goblin icon means only the (gem-costing) goblin is free = 0."""
@@ -1793,6 +2116,8 @@ class Bot:
         if len(accounts) < 2:
             return self.switch_fail(f"need 2+ accounts to rotate, found {[a[0] for a in accounts]}")
         self._acc_idx = (self._acc_idx + 1) % len(accounts)
+        if accounts[self._acc_idx][0].lower() == (self._last_name or "").lower():  # that's the one we're on
+            self._acc_idx = (self._acc_idx + 1) % len(accounts)
         name, xy = accounts[self._acc_idx]
         self.log(f"Switching account -> {name}", "ok")
         self._last_name, self._pre = None, None  # new account: re-read its name, don't mix its loot with the last
@@ -1806,6 +2131,7 @@ class Bot:
                 self._bank_backoff.clear()
                 self._busy_until.clear()
                 self.bump("switches")
+                self._last_name = name  # picked from the Supercell ID list: no need to read it
                 self.emit("state", f"Home village ({name})")
                 return True
             if self.find(f, "wall_okay_button") or time.time() > end - 60 + 6 * (backs + 1):
@@ -2691,8 +3017,21 @@ class App(tk.Tk):
             self.stat_labels[key].pack(anchor="w")
 
         live = self.card(tab, "Live view", row=1, column=0, padx=S(0, 6))
-        self.state_label = ttk.Label(live, text="Idle", style="Big.TLabel", foreground=MUTED)
-        self.state_label.pack(anchor="w", pady=S(0, 8))
+        top = ttk.Frame(live, style="Card.TFrame")
+        top.pack(fill="x", pady=S(0, 8))
+        self.state_label = ttk.Label(top, text="Idle", style="Big.TLabel", foreground=MUTED)
+        self.state_label.pack(side="left")
+        self.bb_var = tk.BooleanVar(value=bool(self.cfg["builder_base_enabled"]))
+
+        def bb_toggled():
+            self.cfg["builder_base_enabled"] = self.bb_var.get()  # the running bot shares this dict: live
+            if "builder_base_enabled" in getattr(self, "svars", {}):
+                self.svars["builder_base_enabled"][0].set(self.bb_var.get())
+            save_config(self.cfg)
+            self.log("Builder Base " + ("on: each account gets a visit (collect, cart, upgrades, daily stars)."
+                                        if self.bb_var.get() else "off."), "ok")
+        ttk.Checkbutton(top, text="🏗  Builder Base", variable=self.bb_var, command=bb_toggled,
+                        style="Switch.TCheckbutton").pack(side="right")
         self.preview = tk.Canvas(live, bg="#141414", highlightthickness=0, height=S(240))
         self.preview.pack(fill="both", expand=True)
         self.preview.create_text(10, 10, anchor="nw", text="The emulator screen appears here while farming.",
@@ -3131,7 +3470,7 @@ class App(tk.Tk):
                     files.append(("bot.log", hide.sub("k=<hidden>", "".join(f.readlines()[-400:])).encode()))
             except OSError:
                 pass
-            for name in ("debug_deploy.png", "debug_wall.png"):
+            for name in ("debug_deploy.png", "debug_wall.png", "debug_boat.png"):
                 path = os.path.join(BASE_DIR, name)
                 if os.path.exists(path) and time.time() - os.path.getmtime(path) < 6 * 3600:
                     img = cv2.imread(path)
@@ -3197,6 +3536,8 @@ class App(tk.Tk):
                 messagebox.showerror("Invalid value", f"'{label}' needs a number.")
                 return
         self.cfg.update(new)
+        if hasattr(self, "bb_var"):
+            self.bb_var.set(bool(self.cfg["builder_base_enabled"]))
         self.adb.path = self.cfg["adb_path"]
         if HAVE_TESS:
             pytesseract.pytesseract.tesseract_cmd = self.cfg["tesseract_path"]
