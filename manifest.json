@@ -1,11 +1,12 @@
 {
- "version": 2,
+ "version": 3,
  "files": {
-  "bot.py": "b229296f9f3a5e601a37b28bbb09a82d5aaaa509f26b39a01f345cbd24e51539",
+  "bot.py": "e0f07b8b61e6245eaa32f4ba015b38707993c19f53af8b74e9b5968c1b47b9c5",
   "setup.ps1": "2ef2b8485cb8aecc277dafc238afa8002093f611728e017e8124fd53c7faf25f",
   "Setup.bat": "3d3ea502d691eccb7207f2d7388826a07c48f3f0c8eafa6c0a96df51b88bb8d3",
   "README.txt": "788f677c3217c29b371ca97eb09ccf5ff83a2aba706e8f1162f054363a6ab3b1",
   ".gitignore": "2d9fb76a794d169d3f243327c91509449356a4a5e4d6a150650ad345374e91c5",
+  ".gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
   "templates/attack_button.png": "1ad591c3f5f1d0f627aeca092fbfc07523acd067bbfaf71ea7cf5315234bdac4",
   "templates/building_upgrade_button.png": "5cb661d476b8ec6322f413d333c335f5aaaa1d5e95c4ffca70e5c4b6444b276f",
   "templates/confirm_attack_button.png": "fb1bbd1a9b0ed4f4f68b4c5a3a13c40b682f1c7f6d6f6d4b1dd9cacb51faaff6",
