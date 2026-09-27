@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 11  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 12  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -174,6 +174,7 @@ DEFAULTS = {
     "bank_post_spend_delay": 1.0,
     "watchdog_enabled": False,
     "emulator_exe_path": "",
+    "discord_webhook": "https://discord.com/api/webhooks/1541513961076293833/CtGCtGAaIJxf-MD68mBWdj6uZJ0Sf6x_E4Cj5bKIlmOsAoBgg91-1_IIqJ5s8V1olDQ7",  # the Anywhere link is posted here on every start
     "emulator_launch_args": "",
     "coc_package_name": "com.supercell.clashofclans",
     "coc_activity_name": "com.supercell.titan.GameApp",
@@ -278,21 +279,28 @@ _cfg_lock = threading.Lock()
 
 
 def load_config():
-    cfg = json.loads(json.dumps(DEFAULTS))
-    if not os.path.exists(CONFIG_FILE):
-        return cfg, None
+    cfg, err = json.loads(json.dumps(DEFAULTS)), None
     try:
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            cfg.update(json.load(f))
-    except Exception as e:  # never touch the file itself - it may just be locked by AV/sync
-        return cfg, f"config.json couldn't be read ({e}); running on defaults this session."
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, encoding="utf-8") as f:
+                cfg.update(json.load(f))
+    except Exception as e:  # keep a copy: the next save would otherwise replace it with defaults
+        try:
+            shutil.copy2(CONFIG_FILE, CONFIG_FILE + ".broken")
+        except OSError:
+            pass
+        err = f"config.json couldn't be read ({e}); running on defaults. The old file is kept as config.json.broken."
     for k in ("coords", "ocr_regions", "fixed_points"):
         cfg[k] = cfg.get(k) or {}
     for k, path in BUNDLED.items():
         if not (cfg.get(k) and os.path.exists(cfg[k])) and os.path.exists(path):
             cfg[k] = path
     cfg["deploy_units"] = cfg.get("deploy_units") or []
-    return cfg, None
+    cfg["discord_webhook"] = cfg.get("discord_webhook") or DEFAULTS["discord_webhook"]  # blank saved = the built-in
+    player = r"C:\Program Files\BlueStacks_nxt\HD-Player.exe"
+    if not os.path.isfile(cfg.get("emulator_exe_path") or "") and os.path.isfile(player):
+        cfg["emulator_exe_path"] = player  # so crash recovery can restart BlueStacks
+    return cfg, err
 
 
 def save_config(cfg):
@@ -301,7 +309,13 @@ def save_config(cfg):
         tmp = CONFIG_FILE + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
-        os.replace(tmp, CONFIG_FILE)
+        for i in range(10):  # antivirus / OneDrive can hold the file for a moment
+            try:
+                return os.replace(tmp, CONFIG_FILE)
+            except PermissionError:
+                if i == 9:
+                    raise
+                time.sleep(0.3)
 
 
 def tpath(name):
@@ -361,6 +375,8 @@ class ADB:
             return subprocess.run(self._cmd(*a), capture_output=True, timeout=timeout, creationflags=NO_WINDOW)
         except FileNotFoundError:
             raise ADBError(f"adb.exe not found at '{self.path}'")
+        except OSError as e:
+            raise ADBError(f"couldn't run adb.exe: {e}")
         except subprocess.TimeoutExpired:
             raise ADBError(f"adb {' '.join(a[:2])} timed out")
 
@@ -370,6 +386,8 @@ class ADB:
                                creationflags=NO_WINDOW)
         except FileNotFoundError:
             raise ADBError(f"adb.exe not found at '{self.path}'")
+        except OSError as e:
+            raise ADBError(f"couldn't run adb.exe: {e}")
         except subprocess.TimeoutExpired:
             raise ADBError(f"adb {a[0]} timed out")
         return (r.stdout + r.stderr).strip()
@@ -396,8 +414,11 @@ class ADB:
     def _persistent(self, cmd, timeout):
         with self._lock:
             if self._sh is None or self._sh.poll() is not None:
-                self._sh = subprocess.Popen(self._cmd("shell"), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                            stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
+                try:
+                    self._sh = subprocess.Popen(self._cmd("shell"), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                                stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
+                except OSError as e:
+                    raise ADBError(f"couldn't start adb shell: {e}")
                 self._q = queue.Queue()
                 threading.Thread(target=_pipe_reader, args=(self._sh.stdout, self._q), daemon=True).start()
             self._n += 1
@@ -762,6 +783,8 @@ def troop_bar(frame):
     'spell' (purple card with a count), 'single' (hero / siege / pet: no count), 'used' (greyed x0),
     'empty' (dashed slot)."""
     glyphs = digit_glyphs()
+    if glyphs is None:
+        return []  # templates/digits.png missing
     H, W = frame.shape[:2]
     ya, yb = int(H * 0.833), int(H * 0.972)
     g = cv2.cvtColor(frame[ya:yb], cv2.COLOR_BGR2GRAY).astype(np.float32)
@@ -779,7 +802,7 @@ def troop_bar(frame):
         inside = bar_hsv[:, a + 5:a + 12]
         if inside[:, :, 1].mean() > 100 and inside[:, :, 2].mean() < 110:
             continue  # dark blue bar background, not a card (e.g. a selected card's thick border)
-        b = next((p for p in peaks if cw - 6 <= p - a <= cw + 7), None)
+        b = next((p for p in peaks if cw - 6 <= p - a <= cw + 16), None)  # +16: a selected card's white border
         if b:
             cards.append((a, b))
             end = b
@@ -804,7 +827,7 @@ def troop_bar(frame):
     def level_badge(a, b):
         """Every real card has a dark level badge bottom-left with white digits (a smaller font than the
         count, so just look for a digit-sized white blob on dark). A dashed empty slot showing the base doesn't."""
-        x0, y0 = a + 2, int(H * 0.93)
+        x0, y0 = a + 2, int(H * 0.91)
         cc = cv2.cvtColor(frame[y0:int(H * 0.985), x0:a + (b - a) // 2], cv2.COLOR_BGR2HSV)
         white = ((cc[:, :, 2] > 200) & (cc[:, :, 1] < 60)).astype(np.uint8)
         n, _, st, _ = cv2.connectedComponentsWithStats(white, 8)
@@ -823,6 +846,8 @@ def troop_bar(frame):
         colored = (sat > 90) & (val > 90) & ~((hue >= 30) & (hue <= 85))  # any card colour, not grass
         grey = (sat < 40) & (val > 60)
         cnt = number(top, top + 50, a + (b - a) // 3, b - 4, 18)  # 'x16' at the top-right, after the 'x'
+        if cnt is None:  # a selected card sits ~15px higher
+            cnt = number(top - int(H * 0.017), top + 35, a + (b - a) // 3, b - 4, 18)
         if grey.mean() > 0.4:
             kind = "used"
         elif colored.mean() < 0.2 or not level_badge(a, b):
@@ -1018,6 +1043,9 @@ class Bot:
                         online = True
                         self.emit("device", True)
                     adb_fails = 0
+                    if frame.shape[:2] != (1080, 1920):
+                        self.fix_resolution(frame)
+                        continue
                     self.hits = {}
                     state = self.detect(frame)
                     if state != prev:
@@ -1032,15 +1060,13 @@ class Bot:
                             self.log("Closing an Okay/Cancel dialog with Back (never confirms).")
                             self.adb.back()
                             self.sleep(1.0)
-                        elif self.groq_on("groq_supervisor"):
-                            if stuck >= 2.5 and time.time() - self._last_groq >= 5:
-                                state = self.groq_rescue(frame)
-                                if state:
-                                    unknown_since = None
-                                    getattr(self, "on_" + state.lower())(frame, prev)
-                                    prev = state
-                                    continue
-                        elif stuck > 10 * (backs + 1) and backs < 3:
+                        elif (self.groq_on("groq_supervisor") and stuck >= 2.5 and time.time() - self._last_groq >= 5
+                              and (state := self.groq_rescue(frame))):
+                            unknown_since = None
+                            getattr(self, "on_" + state.lower())(frame, prev)
+                            prev = state
+                            continue
+                        elif stuck > 10 * (backs + 1) and backs < 3:  # also when Groq is down or unsure
                             self.log("Unrecognised screen - pressing Back to clear any popup.", "warn")
                             self.adb.back()
                             backs += 1
@@ -1856,31 +1882,43 @@ class Bot:
         for x, y, _, n in spells:  # spells FIRST, as taps spread along their line (a hold doesn't cast them)
             self.tap((x, y), self.cfg["deploy_select_delay"])
             self.drop(sa, sb, n, None)
+        # On another PC the view can sit differently (zoom, map, pan), putting the saved line on scenery or in the
+        # red zone: taps then just select the card. The map edge always runs at the same angle, so the fix is a
+        # parallel shift - learned once per PC (drop_offset) and reused.
+        delay, off = self.cfg["deploy_select_delay"], int(self.cfg.get("drop_offset", 0))
         for x, y, _, n in troops:
-            self.tap((x, y), self.cfg["deploy_select_delay"])
-            self.drop(a, b, n, (x, y))
-        # Troops that didn't land (line touched the red zone / trees, or the view is a bit off): drop what's left
-        # on the line shifted outward, then inward. Heroes then use whichever line worked.
-        used = 0
-        for off in (0, 60, 120, -60, 190, None):
+            self.tap((x, y), delay)
+            self.drop(*self.shift_line(a, b, off), n, (x, y))
+        tried = {off}
+        while True:
             self.sleep(0.6)
             left = [cd for cd in troop_bar(self.shot()) if cd[2] == "troop" and cd[3]]
             if not left:
                 break
-            if off is None:
-                self.log(f"{sum(cd[3] for cd in left)} troops still didn't land - re-pick the troop drop line "
-                         "on the scouting screen.", "err")
-                used = 0
+            x, y, _, n = left[0]  # probe: ONE troop per candidate line, nearest first, until one lands
+            self.tap((x, y), delay)
+            found = None
+            for cand in sorted(set(range(-360, 361, 60)) - tried, key=lambda o: (abs(o - off), o)):
+                tried.add(cand)
+                self.adb.tap(*self.along(*self.shift_line(a, b, cand), 1, 2))
+                self.sleep(0.5)
+                now = next(((cd[3] or 0) for cd in troop_bar(self.shot()) if abs(cd[0] - x) < 30), n)
+                if now < n:
+                    found = cand
+                    break
+            if found is None:
+                self.log(f"{sum(cd[3] for cd in left)} troops won't land anywhere near the drop line - re-pick it "
+                         "(Setup > Troop drop line, on the scouting screen). See debug_deploy.png.", "err")
                 break
-            if off:
-                self.log(f"{sum(cd[3] for cd in left)} troops didn't land - retrying {abs(off)}px "
-                         f"{'further out' if off > 0 else 'further in'}.", "warn")
-            used = off
-            oa, ob = self.shift_line(a, b, off)
-            for x, y, _, n in left:
-                self.tap((x, y), self.cfg["deploy_select_delay"])
-                self.drop(oa, ob, n, (x, y))
-        a, b = self.shift_line(a, b, used)
+            off = found
+            self.log(f"Troops weren't landing - moved the drop line {abs(off)}px "
+                     f"{'away from' if off > 0 else 'towards'} the base; remembered for next time.", "warn")
+            self.cfg["drop_offset"] = off
+            save_config(self.cfg)
+            for x2, y2, _, n2 in left:
+                self.tap((x2, y2), delay)
+                self.drop(*self.shift_line(a, b, off), n2, (x2, y2))
+        a, b = self.shift_line(a, b, off)
         for k, (x, y, _, _) in enumerate(singles):  # heroes / siege spread evenly along the line
             self.tap((x, y), self.cfg["deploy_select_delay"])
             self.adb.tap(*self.along(a, b, k, len(singles)))
@@ -1960,7 +1998,28 @@ class Bot:
             return
         self.sleep(min(120, 3 * fails * fails))  # 3s, 12s, 27s... quick first retry
 
-    def restart_emulator(self):
+    def fix_resolution(self, frame):
+        """Buttons, drop lines and text boxes are all 1920x1080 pixels. The monitor doesn't matter (screenshots
+        come from inside the emulator), but BlueStacks' own resolution does: set it back and restart BlueStacks."""
+        h, w = frame.shape[:2]
+        conf = r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf"
+        if getattr(self, "_res_fixed", False) or not self.emulator_restart_allowed() or not os.path.exists(conf):
+            self.log(f"The emulator is {w}x{h} but must be 1920x1080: BlueStacks Settings > Display > "
+                     "1920x1080, DPI 240, then restart BlueStacks.", "err")
+            self.sleep(60)
+            return
+        self._res_fixed = True
+        self.log(f"The emulator is {w}x{h} - setting BlueStacks to 1920x1080 and restarting it.", "warn")
+
+        def edit():
+            s = open(conf, encoding="utf-8").read()
+            for key, val in (("fb_width", "1920"), ("fb_height", "1080"), ("dpi", "240")):
+                s = re.sub(rf'(bst\.instance\.[^.]+\.{key})="[^"]*"', rf'\1="{val}"', s)
+            with open(conf, "w", encoding="utf-8", newline="") as f:
+                f.write(s)
+        self.restart_emulator(while_closed=edit)
+
+    def restart_emulator(self, while_closed=None):
         now = time.time()
         self._emu_restarts = [t for t in self._emu_restarts if now - t < 3600]
         if len(self._emu_restarts) >= 3:
@@ -1973,6 +2032,11 @@ class Bot:
         subprocess.run(["taskkill", "/IM", os.path.basename(exe), "/T", "/F"], capture_output=True,
                        timeout=20, creationflags=NO_WINDOW)
         self.sleep(5)
+        if while_closed:  # BlueStacks rewrites its conf on exit, so settings are changed only while it's closed
+            try:
+                while_closed()
+            except OSError as e:
+                self.log(f"Couldn't change BlueStacks' settings: {e}", "err")
         subprocess.Popen([exe, *self.cfg["emulator_launch_args"].split()], creationflags=0x00000008)  # detached
         self.sleep(self.cfg["emulator_boot_wait"])
         end = time.time() + self.cfg["adb_ready_timeout"]
@@ -2113,19 +2177,74 @@ class Tunnel:
         except Exception:
             st = None
         while True:
-            if not self._alive(st):
-                self.on_url(None)
-                try:
-                    st = self._start()
-                except OSError as e:
-                    log_file.warning(f"cloudflared failed: {e}")
-                    st = None
-                if not st:
-                    time.sleep(30)
-                    continue
-            self.on_url(st["url"])
-            while self._alive(st):
-                time.sleep(10)
+            try:
+                if self._alive(st) and not self._link_works(st["url"]):
+                    # e.g. a saved tunnel Cloudflare has deleted: cloudflared keeps running ('Tunnel not found')
+                    log_file.warning(f"Anywhere link {st['url']} is dead - starting a new one.")
+                    self._kill(st)
+                if not self._alive(st):
+                    self.on_url(None)
+                    try:
+                        st = self._start()
+                    except OSError as e:
+                        log_file.warning(f"cloudflared failed: {e}")
+                        st = None
+                    # a brand-new name takes a few seconds to exist; opening it before that gets 'site can't be
+                    # reached' cached in the browser, so only hand the link out once it answers
+                    if st:
+                        for _ in range(18):  # up to ~90s
+                            if self._link_works(st["url"]):
+                                break
+                            time.sleep(5)
+                        else:
+                            log_file.warning(f"New Anywhere link {st['url']} never answered - trying another.")
+                            self._kill(st)
+                            st = None
+                    if not st:
+                        time.sleep(30)
+                        continue
+                self.on_url(st["url"])
+                checked = time.time()
+                while self._alive(st):
+                    time.sleep(10)
+                    if time.time() - checked > 60:
+                        checked = time.time()
+                        if not self._link_works(st["url"]) and not self._link_works(st["url"]):  # twice: a blip
+                            log_file.warning(f"Anywhere link {st['url']} stopped working - starting a new one.")
+                            self._kill(st)
+                            break
+            except Exception as e:  # the tunnel thread must never die
+                log_file.warning(f"Tunnel: {e}")
+                st = None
+                time.sleep(30)
+
+    @staticmethod
+    def _kill(st):
+        subprocess.run(["taskkill", "/PID", str(st["pid"]), "/F"], capture_output=True, creationflags=NO_WINDOW)
+        time.sleep(1)
+
+    @staticmethod
+    def _link_works(url):
+        """Our server answers (any status) through the tunnel. Cloudflare says 530 / the name stops resolving
+        when a quick tunnel is gone. No internet at all also reads as 'dead' - a new tunnel is harmless then."""
+        import urllib.error
+        import urllib.request
+        host = url.split("//", 1)[-1].split("/")[0]
+        try:  # ask Cloudflare's DNS directly: a lookup through Windows would cache 'no such name' for minutes
+            r = json.load(urllib.request.urlopen(urllib.request.Request(
+                f"https://cloudflare-dns.com/dns-query?name={host}&type=A",
+                headers={"accept": "application/dns-json"}), timeout=10))
+            if r.get("Status") != 0 or not r.get("Answer"):
+                return False
+        except Exception:
+            return False
+        try:
+            urllib.request.urlopen(url + "/status", timeout=15).close()
+            return True
+        except urllib.error.HTTPError as e:
+            return e.code not in (502, 530, 1033)
+        except Exception:
+            return False
 
     @staticmethod
     def kill_saved():
@@ -2155,6 +2274,58 @@ def pan_view(adb, where, frame_w=1920, frame_h=1080):
     for _ in range(3):
         adb.swipe(cx - dx, cy - dy, cx + dx, cy + dy, 450)
         time.sleep(0.25)
+
+
+def post_discord(cfg, text, files=()):
+    """Best effort: a failed post is logged, never raised. files: [(filename, bytes)], up to 10."""
+    import base64
+    import urllib.request
+    hook = cfg.get("discord_webhook") or ""
+    if not hook.startswith("http"):
+        try:
+            hook = base64.b64decode(hook).decode()
+        except Exception:
+            return
+    if not hook.startswith("https://discord.com/api/webhooks/"):
+        return
+    payload = json.dumps({"content": text[:1900]})
+    if files:  # multipart: the message as payload_json + each file as files[i]
+        b = "----LootFarmer" + secrets.token_hex(8)
+        nl = "\r\n"
+        parts = [f'--{b}{nl}Content-Disposition: form-data; name="payload_json"{nl}'
+                 f'Content-Type: application/json{nl}{nl}{payload}{nl}'.encode()]
+        for i, (name, data) in enumerate(files[:10]):
+            parts += [f'--{b}{nl}Content-Disposition: form-data; name="files[{i}]"; filename="{name}"{nl}'
+                      f'Content-Type: application/octet-stream{nl}{nl}'.encode(), data, nl.encode()]
+        body, ctype = b"".join(parts) + f"--{b}--{nl}".encode(), f"multipart/form-data; boundary={b}"
+    else:
+        body, ctype = payload.encode(), "application/json"
+    try:
+        req = urllib.request.Request(hook, body, method="POST", headers={"Content-Type": ctype, "User-Agent": "LootFarmer"})
+        urllib.request.urlopen(req, timeout=60).close()
+        return True
+    except Exception as e:
+        log_file.info(f"Discord post failed: {e}")
+
+
+def single_instance():
+    """A machine-wide lock so only one Loot Farmer drives the emulator. Waits a few seconds first, so the
+    Restart / Update buttons (new copy starts while the old one closes) still work. None = another is running."""
+    if os.name != "nt":
+        return True
+    import ctypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateMutexW.restype = ctypes.c_void_p
+    k32.CreateMutexW.argtypes = (ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p)
+    k32.CloseHandle.argtypes = (ctypes.c_void_p,)
+    for _ in range(20):
+        h = k32.CreateMutexW(None, False, "Local\\LootFarmerBot")
+        if h and ctypes.get_last_error() != 183:  # 183 = ERROR_ALREADY_EXISTS
+            return h
+        if h:
+            k32.CloseHandle(h)
+        time.sleep(0.5)
+    return None
 
 
 def battery():
@@ -2284,6 +2455,8 @@ class DropLinePicker(tk.Toplevel):
         if not a:
             return messagebox.showinfo("Drop line", "Click at least the start point.", parent=self)
         fp = self.app.cfg["fixed_points"]
+        if self.keys[0] == "deploy_point":
+            self.app.cfg["drop_offset"] = 0  # a freshly picked line needs no learned shift
         fp[self.keys[0]] = a
         if b:
             fp[self.keys[1]] = b
@@ -2463,6 +2636,10 @@ class App(tk.Tk):
             self.public_label.pack(anchor="w")
             self.public_label.bind("<Button-1>", lambda e: self.public_url and self._copy(
                 self.public_url, "Anywhere link"))
+        rep = ttk.Label(left, text="🐞  Send debug report to Discord", style="Sub.TLabel", foreground=BLUE,
+                        cursor="hand2")
+        rep.pack(anchor="w")
+        rep.bind("<Button-1>", lambda e: self.send_report("sent by hand"))
 
         right = ttk.Frame(head)
         right.pack(side="right")
@@ -2693,13 +2870,20 @@ class App(tk.Tk):
         self.full_log.pack(fill="both", expand=True)
 
     # --- event pump (the only place the UI is updated from bot/background work) ---
+    def report_callback_exception(self, exc, val, tb):
+        """Tk errors would go to a console pythonw doesn't have: log them and keep the window alive."""
+        log_file.error("UI error:\n" + "".join(traceback.format_exception(exc, val, tb)))
+
     def _pump(self):
+        self.after(100, self._pump)  # re-arm first: one bad message must never freeze the window for good
         frame = None
         try:
             for _ in range(500):
                 kind, data = self.q.get_nowait()
                 if kind == "log":
                     self._append_log(*data)
+                    if data[0] == "err" and time.time() - getattr(self, "_report_t", 0) > 900:
+                        self.send_report(f"error: {data[1][:300]}", auto=True)
                 elif kind == "state":
                     col = RED if data == "Recovering" else MUTED if data in ("Stopped", "Idle") else GREEN
                     self.state_label.config(text=data, foreground=col)
@@ -2760,7 +2944,6 @@ class App(tk.Tk):
             self.started_at = None
             self.start_btn.config(text="▶  Start farming", state="normal")
             self.loot_btn.config(text="💰  Loot only", state="normal")
-        self.after(100, self._pump)
 
     def _append_log(self, level, msg):
         ts = time.strftime("%H:%M:%S ")
@@ -2800,6 +2983,8 @@ class App(tk.Tk):
             new = f"{url}/?k={self.cfg['phone_view_key']}"
             if new != self.public_url:
                 self.log(f"Anywhere link ready: {new}", "ok")
+                self.bg(lambda: post_discord(self.cfg, f"🟢 **Loot Farmer v{APP_VERSION}** is running on "
+                                                       f"**{os.environ.get('COMPUTERNAME', 'a PC')}**\n{new}"))
             self.public_url = new
             self.public_label.config(text="🌍  Anywhere link  (click to copy)", foreground=BLUE)
         else:
@@ -2929,6 +3114,44 @@ class App(tk.Tk):
         if os.name == "nt" and exe.lower().endswith("python.exe") and os.path.exists(exe[:-10] + "pythonw.exe"):
             exe = exe[:-10] + "pythonw.exe"
         subprocess.Popen([exe, os.path.abspath(__file__)], cwd=BASE_DIR, creationflags=0x00000008)
+
+    def send_report(self, reason, auto=False):
+        """bot.log, the debug screenshots, the live screen and the non-secret settings to the Discord webhook.
+        Automatic ones (on errors) at most every 15 min so a repeating error can't flood the channel."""
+        if not self.cfg.get("discord_webhook"):
+            if not auto:
+                self.log("No Discord webhook set (discord_webhook in bot.py / config.json).", "warn")
+            return
+        self._report_t = time.time()
+
+        def work():
+            files, hide = [], re.compile(r"k=[\w-]+")
+            try:
+                with open(LOG_FILE, encoding="utf-8", errors="replace") as f:
+                    files.append(("bot.log", hide.sub("k=<hidden>", "".join(f.readlines()[-400:])).encode()))
+            except OSError:
+                pass
+            for name in ("debug_deploy.png", "debug_wall.png"):
+                path = os.path.join(BASE_DIR, name)
+                if os.path.exists(path) and time.time() - os.path.getmtime(path) < 6 * 3600:
+                    img = cv2.imread(path)
+                    if img is not None:
+                        files.append((name.replace(".png", ".jpg"), cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])[1].tobytes()))
+            try:
+                files.append(("screen_now.jpg", cv2.imencode(".jpg", self.adb.screenshot(),
+                                                             [cv2.IMWRITE_JPEG_QUALITY, 85])[1].tobytes()))
+            except Exception:
+                pass
+            secret = ("groq_api_key", "phone_view_key", "discord_webhook")
+            files.append(("settings.json", json.dumps({k: v for k, v in self.cfg.items() if k not in secret},
+                                                      indent=1).encode()))
+            text = (f"🐞 **Debug report** from **{os.environ.get('COMPUTERNAME', 'a PC')}** (v{APP_VERSION}) - "
+                    f"{reason}\nState: {self.state_label.cget('text')}")
+            if post_discord(self.cfg, text, files):
+                self.log(f"Debug report sent to Discord ({len(files)} files).", "ok")
+            elif not auto:
+                self.log("Couldn't send the debug report - details in bot.log.", "warn")
+        self.bg(work)
 
     def restart_app(self):
         """Close and reopen the app so it picks up code changes (stops any farming first)."""
@@ -3433,4 +3656,16 @@ if __name__ == "__main__":
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except Exception:
             pass
-        App().mainloop()
+        _instance = single_instance()
+        if _instance is None:
+            tk.Tk().withdraw()
+            messagebox.showinfo("Loot Farmer", "Loot Farmer is already running (maybe from another folder).\n\n"
+                                               "Two copies would fight over the same emulator - close the other one.")
+            sys.exit()
+        try:
+            App().mainloop()
+        except Exception:
+            log_file.error("Loot Farmer crashed:\n" + traceback.format_exc())
+            tk.Tk().withdraw()
+            messagebox.showerror("Loot Farmer", "Loot Farmer hit an error and closed - details are in bot.log.\n\n"
+                                                + traceback.format_exc(limit=2))
