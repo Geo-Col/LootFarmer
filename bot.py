@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 5  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 6  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -2399,7 +2399,8 @@ class App(tk.Tk):
                                     command=self.toggle, width=18)
         self.start_btn.pack(side="right", padx=S(14, 0))
         ttk.Button(right, text="⟳  Restart app", command=self.restart_app).pack(side="right", padx=S(10, 0))
-        self.update_btn = ttk.Button(right, text="⬆  Update", style="Accent.TButton", command=self.do_update)
+        self.update_btn = ttk.Button(left, text="⬆  Update available - click to update", style="Accent.TButton",
+                                     command=self.do_update)  # under the title: the right-hand row is full
         self._update = None  # shown only when GitHub has a newer version
         self.loot_btn = ttk.Button(right, text="💰  Loot only", command=lambda: self.toggle("loot"), width=14)
         self.loot_btn.pack(side="right", padx=S(10, 0))
@@ -2825,7 +2826,7 @@ class App(tk.Tk):
     def _show_update(self, man):
         if not self._update:
             self.log(f"Update available: version {man['version']} (you have {APP_VERSION}). Click ⬆ Update.", "ok")
-            self.update_btn.pack(side="right", padx=S(10, 0))
+            self.update_btn.pack(anchor="w", pady=S(6, 0))
         self._update = man
 
     def do_update(self):
@@ -2845,7 +2846,8 @@ class App(tk.Tk):
                 n = apply_update(self._update)
             except Exception as e:
                 self.log(f"Update failed: {e}", "err")
-                return self.ui(lambda: self.update_btn.config(text="⬆  Update", state="normal"))
+                return self.ui(lambda: self.update_btn.config(text="⬆  Update available - click to update",
+                                                              state="normal"))
             self.log(f"Updated {n} files to version {self._update['version']} - restarting.", "ok")
             self.ui(lambda: self.after(800, self._restart_now))
         self.bg(work)
