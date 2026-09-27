@@ -1,0 +1,15 @@
+# personal / machine-specific - never upload
+config.json
+bot.log
+cloudflared.log
+tunnel.json
+debug_wall.png
+# build outputs and big binaries
+*.zip
+__pycache__/
+_archive/
+cloudflared.exe
+Tesseract-OCR/
+platform-tools/
+manifest.json.tmp
+*.new

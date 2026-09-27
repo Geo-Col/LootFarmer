@@ -1,0 +1,29 @@
+{
+ "version": 2,
+ "files": {
+  "bot.py": "b229296f9f3a5e601a37b28bbb09a82d5aaaa509f26b39a01f345cbd24e51539",
+  "setup.ps1": "2ef2b8485cb8aecc277dafc238afa8002093f611728e017e8124fd53c7faf25f",
+  "Setup.bat": "3d3ea502d691eccb7207f2d7388826a07c48f3f0c8eafa6c0a96df51b88bb8d3",
+  "README.txt": "788f677c3217c29b371ca97eb09ccf5ff83a2aba706e8f1162f054363a6ab3b1",
+  ".gitignore": "2d9fb76a794d169d3f243327c91509449356a4a5e4d6a150650ad345374e91c5",
+  "templates/attack_button.png": "1ad591c3f5f1d0f627aeca092fbfc07523acd067bbfaf71ea7cf5315234bdac4",
+  "templates/building_upgrade_button.png": "5cb661d476b8ec6322f413d333c335f5aaaa1d5e95c4ffca70e5c4b6444b276f",
+  "templates/confirm_attack_button.png": "fb1bbd1a9b0ed4f4f68b4c5a3a13c40b682f1c7f6d6f6d4b1dd9cacb51faaff6",
+  "templates/confirm_wall_upgrade_button.png": "705fb873b9fbd116496174fecf625ba4896b940ffb8841f1d02a1b2b7936b2f8",
+  "templates/digits.png": "9a279d38a8fa776bd9b8647bc5fc27a317e3f1a180693aaa9293ec05917ec27d",
+  "templates/find_match_button.png": "cb4de9459ce2101699ca951542e89d84f768a6ac0378dc58133dcdce4712e41a",
+  "templates/lab_picker_title.png": "af3e133a745fc37d16bebbe4f57eb85b35d3a9800438995100ff70c73e4533cd",
+  "templates/next_button.png": "ed867c21f32a4c1514d9fe9c8e091bdf884861a52d3e30c1c563a180f0226d63",
+  "templates/return_home_button.png": "99c88d1717c694d5f7c46b19d53311fd3eed49b15d20e75ec39c0d1b82adf24a",
+  "templates/settings_cog_button.png": "025e228eb2c37b70e4200f0683a14e4b9189a5ad57fde915bf33019402a9d223",
+  "templates/supercell_id_header.png": "dab1797a912a3df81e7ec80fb0530bb2fadae3cfaba5eaf9689e9ca805e2a939",
+  "templates/surrender_button.png": "6ce3496696e71f900d3df5b53146977621b620c6fdd22b291a3dfe9eac6c9828",
+  "templates/surrender_confirm_button.png": "a661439b47f07ca43f83d7afccc4817b4f16bc591eace971cca8da5384e0c172",
+  "templates/switch_account_button.png": "ee18db89c5972c891406eb194149fe432e1929e7b22732324eb476d273a5f291",
+  "templates/upgrade_more_button.png": "0e0e12208be6355a5b37c2dabb2da27ef574376e21bdcf64a92b12b8d92a65ff",
+  "templates/upgrade_more_disabled.png": "639c5a4898e7448babbdd8d221c6e6e35175608c815ce1e90154d1a60db4e8d4",
+  "templates/wall_elixir_upgrade_button.png": "04258c369dd42479c57ab5200875beb560a54d793ea2f2673c351f5daadc3c81",
+  "templates/wall_gold_upgrade_button.png": "c57bf05bb697c249cadc51995924a4e4e8e13218a0d32f26c980fb09f5904b97",
+  "templates/wall_okay_button.png": "7cea4834c382e5f135eb80d00865a74a3a526600bf421f3f0092ebeac73628bf"
+ }
+}
