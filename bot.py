@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 10  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 11  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -784,18 +784,14 @@ def troop_bar(frame):
             cards.append((a, b))
             end = b
     top = int(H * 0.826)
-    out = []
-    for a, b in cards:
-        hsv = cv2.cvtColor(frame[ya:yb, a + 4:b - 4], cv2.COLOR_BGR2HSV)
-        hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
-        colored = (sat > 90) & (val > 90) & ~((hue >= 30) & (hue <= 85))  # any card colour, not grass
-        grey = (sat < 40) & (val > 60)
-        # count 'x16' at the top-right: digits after the (rejected) 'x'
-        cc = cv2.cvtColor(frame[top:top + 50, a + (b - a) // 3:b - 4], cv2.COLOR_BGR2HSV)
+
+    def number(y0, y1, x0, x1, min_h):
+        """White digits in this box (e.g. the 'x16' count, or the level badge), or None."""
+        cc = cv2.cvtColor(frame[y0:y1, x0:x1], cv2.COLOR_BGR2HSV)
         cm = ((cc[:, :, 2] > 200) & (cc[:, :, 1] < 60)).astype(np.uint8)
         n, lab, st, _ = cv2.connectedComponentsWithStats(cm, 8)
         digits = ""
-        for i in sorted((i for i in range(1, n) if st[i, 3] >= 18), key=lambda i: st[i, 0]):
+        for i in sorted((i for i in range(1, n) if st[i, 3] >= min_h), key=lambda i: st[i, 0]):
             x, y, w, h = st[i, :4]
             gl = cv2.resize((lab[y:y + h, x:x + w] == i).astype(np.float32), (20, 28), interpolation=cv2.INTER_AREA)
             dist = [float(np.abs(gl - glyphs[k]).mean()) for k in range(10)]
@@ -803,10 +799,33 @@ def troop_bar(frame):
                 digits += str(dist.index(min(dist)))
             elif digits:
                 break
-        cnt = int(digits) if digits else None
+        return int(digits) if digits else None
+
+    def level_badge(a, b):
+        """Every real card has a dark level badge bottom-left with white digits (a smaller font than the
+        count, so just look for a digit-sized white blob on dark). A dashed empty slot showing the base doesn't."""
+        x0, y0 = a + 2, int(H * 0.93)
+        cc = cv2.cvtColor(frame[y0:int(H * 0.985), x0:a + (b - a) // 2], cv2.COLOR_BGR2HSV)
+        white = ((cc[:, :, 2] > 200) & (cc[:, :, 1] < 60)).astype(np.uint8)
+        n, _, st, _ = cv2.connectedComponentsWithStats(white, 8)
+        for i in range(1, n):
+            x, y, w, h = st[i, :4]
+            if 0.013 * H <= h <= 0.02 * H and 3 <= w <= 0.016 * W:
+                around = cc[max(0, y - 4):y + h + 4, max(0, x - 4):x + w + 4]
+                if float(around[:, :, 2][around[:, :, 2] <= 200].mean()) < 110:
+                    return True
+        return False
+
+    out = []
+    for a, b in cards:
+        hsv = cv2.cvtColor(frame[ya:yb, a + 4:b - 4], cv2.COLOR_BGR2HSV)
+        hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
+        colored = (sat > 90) & (val > 90) & ~((hue >= 30) & (hue <= 85))  # any card colour, not grass
+        grey = (sat < 40) & (val > 60)
+        cnt = number(top, top + 50, a + (b - a) // 3, b - 4, 18)  # 'x16' at the top-right, after the 'x'
         if grey.mean() > 0.4:
             kind = "used"
-        elif colored.mean() < 0.2:
+        elif colored.mean() < 0.2 or not level_badge(a, b):
             kind = "empty"
         elif cnt is None:
             kind = "single"
@@ -1291,6 +1310,19 @@ class Bot:
         pan_view(self.adb, c.get("deploy_pan", "off"))
         self.sleep(0.5)
         a, b = self.line()
+        try:  # what the bot saw + where it will drop: send this file if placement looks wrong
+            dbg = self.shot().copy()
+            bar = troop_bar(dbg)
+            fp = c["fixed_points"]
+            cv2.line(dbg, tuple(a), tuple(b), (0, 210, 255), 6)
+            if fp.get("spell_point"):
+                cv2.line(dbg, tuple(fp["spell_point"]), tuple(fp.get("spell_line_end") or fp["spell_point"]),
+                         (255, 80, 220), 6)
+            for x, y, kind, n in bar:
+                cv2.putText(dbg, f"{kind} {n or ''}", (x - 60, y - 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            cv2.imwrite(os.path.join(BASE_DIR, "debug_deploy.png"), dbg)
+        except Exception as e:
+            log_file.info(f"debug_deploy.png: {e}")
         if c["auto_deploy"]:
             if self.auto_deploy(a, b):
                 return
@@ -1774,6 +1806,22 @@ class Bot:
         f = k / (n - 1) if n > 1 else 0.5
         return int(a[0] + (b[0] - a[0]) * f), int(a[1] + (b[1] - a[1]) * f)
 
+    def shift_line(self, a, b, px, W=1920, H=1080):
+        """Line a->b moved px away from the base (negative = towards it), kept on screen and above the troop bar.
+        Away from the base = towards the corner the camera was panned to (else away from the screen centre)."""
+        if not px:
+            return a, b
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        ln = (dx * dx + dy * dy) ** 0.5
+        pan = PAN_DIRS.get(self.cfg.get("deploy_pan"))
+        out = (-pan[0], -pan[1]) if pan else ((a[0] + b[0]) / 2 - W / 2, (a[1] + b[1]) / 2 - H / 2)
+        nx, ny = (-dy / ln, dx / ln) if ln else out
+        if nx * out[0] + ny * out[1] < 0:
+            nx, ny = -nx, -ny
+        k = px / ((nx * nx + ny * ny) ** 0.5 or 1)
+        fit = lambda p: [int(min(max(p[0] + nx * k, 20), W - 20)), int(min(max(p[1] + ny * k, 20), H * 0.8))]
+        return fit(a), fit(b)
+
     def drop(self, a, b, n, card):
         """Deploy n of the selected unit as taps spread evenly along a->b. Never drags: a moving touch scrolls the
         view instead of placing troops. With a single spot (a == b) and hold-to-deploy, a still long-press is used."""
@@ -1811,6 +1859,28 @@ class Bot:
         for x, y, _, n in troops:
             self.tap((x, y), self.cfg["deploy_select_delay"])
             self.drop(a, b, n, (x, y))
+        # Troops that didn't land (line touched the red zone / trees, or the view is a bit off): drop what's left
+        # on the line shifted outward, then inward. Heroes then use whichever line worked.
+        used = 0
+        for off in (0, 60, 120, -60, 190, None):
+            self.sleep(0.6)
+            left = [cd for cd in troop_bar(self.shot()) if cd[2] == "troop" and cd[3]]
+            if not left:
+                break
+            if off is None:
+                self.log(f"{sum(cd[3] for cd in left)} troops still didn't land - re-pick the troop drop line "
+                         "on the scouting screen.", "err")
+                used = 0
+                break
+            if off:
+                self.log(f"{sum(cd[3] for cd in left)} troops didn't land - retrying {abs(off)}px "
+                         f"{'further out' if off > 0 else 'further in'}.", "warn")
+            used = off
+            oa, ob = self.shift_line(a, b, off)
+            for x, y, _, n in left:
+                self.tap((x, y), self.cfg["deploy_select_delay"])
+                self.drop(oa, ob, n, (x, y))
+        a, b = self.shift_line(a, b, used)
         for k, (x, y, _, _) in enumerate(singles):  # heroes / siege spread evenly along the line
             self.tap((x, y), self.cfg["deploy_select_delay"])
             self.adb.tap(*self.along(a, b, k, len(singles)))
