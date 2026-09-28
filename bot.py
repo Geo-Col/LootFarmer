@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 13  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 14  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -197,7 +197,8 @@ DEFAULTS = {
     "bank_scroll_duration_ms": 600,
     "bank_scroll_delay": 0.6,
     "bank_post_spend_delay": 1.0,
-    "watchdog_enabled": False,
+    "watchdog_enabled": True,
+    "gfx_profile": 0,  # which GFX_PROFILES entry BlueStacks runs with; moved on automatically after crashes
     "emulator_exe_path": "",
     "discord_webhook": "https://discord.com/api/webhooks/1541513961076293833/CtGCtGAaIJxf-MD68mBWdj6uZJ0Sf6x_E4Cj5bKIlmOsAoBgg91-1_IIqJ5s8V1olDQ7",  # the Anywhere link is posted here on every start
     "emulator_launch_args": "",
@@ -279,6 +280,7 @@ SETTINGS = [
     ]),
     ("Recovery", "Game relaunch is always on. Emulator restart needs the .exe path.", [
         ("watchdog_enabled", "Allow emulator restart", bool),
+        ("gfx_profile", "BlueStacks graphics fallback (0 = as set; rises after crashes)", int),
         ("emulator_exe_path", "Emulator .exe", str),
         ("emulator_launch_args", "Emulator launch args", str),
         ("coc_package_name", "Game package", str),
@@ -1110,7 +1112,10 @@ class Bot:
                     if state is None:
                         unknown_since = unknown_since or time.time()
                         stuck = time.time() - unknown_since
-                        if stuck > self.cfg["watchdog_attack_timeout"]:
+                        # the Supercell logo / loading clouds after a (re)start aren't 'stuck': a slow PC can take
+                        # minutes there, and relaunching mid-load would just loop
+                        loading = time.time() - getattr(self, "_launched_at", 0) < 180
+                        if stuck > (180 if loading else self.cfg["watchdog_attack_timeout"]):
                             self.recover_game(f"stuck on an unrecognised screen for {stuck:.0f}s")
                             unknown_since, backs = None, 0
                         elif self.find(frame, "wall_okay_button"):
@@ -1704,6 +1709,23 @@ class Bot:
                 out.append(xy)
         return out
 
+    def find_any_zoom(self, frame, name, conf=0.75):
+        """Like find(), but also at the smaller/larger sizes things have when the camera is zoomed out/in
+        (Clash remembers each village's zoom, so it differs between accounts and PCs)."""
+        t = self.v.template(name)
+        if t is None:
+            return None
+        small = cv2.resize(frame, None, fx=SCALE, fy=SCALE, interpolation=cv2.INTER_AREA)
+        best = (0, None)
+        for z in (1.0, 0.85, 0.72, 0.62, 1.15):
+            tt = cv2.resize(t[2], None, fx=z, fy=z, interpolation=cv2.INTER_AREA)
+            if tt.shape[0] > small.shape[0] or tt.shape[1] > small.shape[1] or min(tt.shape[:2]) < 6:
+                continue
+            _, v, _, loc = cv2.minMaxLoc(cv2.matchTemplate(small, tt, cv2.TM_CCOEFF_NORMED))
+            if v > best[0]:
+                best = (v, (int((loc[0] + tt.shape[1] / 2) / SCALE), int((loc[1] + tt.shape[0] / 2) / SCALE)))
+        return best[1] if best[0] >= conf else None
+
     def take_boat(self, to):
         """Home <-> Builder Base: find the boat's sail bubble and tap it. True once the other village shows.
         Where the boat is depends on the village and its level (a big Builder Base has it bottom-right, by the
@@ -1713,17 +1735,21 @@ class Bot:
         usual = [(700, 450, 1300, 250)] * 3 if to == "builder" else [(1300, 300, 800, 600)] * 3
         sweep = usual + [L] * 3 + [U] * 2 + [R] * 5 + [D] * 4 + [L] * 5 + [U] * 2
         for _ in range(2):
-            boat = self.find(self.shot(), "bb_boat")
+            boat = self.find_any_zoom(self.shot(), "bb_boat")
+            if not boat:  # zoomed in (e.g. after an upgrade on the far village): zoom out so the sweep covers the map
+                zoom_out(self.adb)
+                self.sleep(0.8)
+                boat = self.find_any_zoom(self.shot(), "bb_boat")
             for mv in sweep:
                 if boat:
                     break
                 self.adb.swipe(*mv, 450)
                 self.sleep(0.9)
-                boat = self.find(self.shot(), "bb_boat")
+                boat = self.find_any_zoom(self.shot(), "bb_boat")
             if boat:
                 if to == "home":
                     self.bb_collect()
-                    boat = self.find(self.shot(), "bb_boat") or boat
+                    boat = self.find_any_zoom(self.shot(), "bb_boat") or boat
                 self.tap(boat, 2.0)
                 if self.wait_for(want, 25, poll=1.0):
                     self.sleep(1.0)
@@ -2280,6 +2306,7 @@ class Bot:
             self.adb.shell(f"am start -n {pkg}/{act}", timeout=20)
         else:
             self.adb.shell(f"monkey -p {pkg} -c android.intent.category.LAUNCHER 1", timeout=20)
+        self._launched_at = time.time()
         self.sleep(self.cfg["game_launch_wait"])
 
     def recover_game(self, reason):
@@ -2306,8 +2333,30 @@ class Bot:
             self.emit("devices", devs)
         return self.adb.ready()
 
+    def emulator_crashed(self):
+        """BlueStacks' window process is gone (crashed or closed). Restart it; two crashes within 30 min mean this
+        graphics setup doesn't work on this PC, so the next one is tried (and kept once it stops crashing)."""
+        now = time.time()
+        self._crashes = [t for t in getattr(self, "_crashes", []) if now - t < 1800] + [now]
+        edit = None
+        idx = int(self.cfg.get("gfx_profile", 0))
+        if len(self._crashes) >= 2 and idx + 1 < len(GFX_PROFILES):
+            idx += 1
+            name, values = GFX_PROFILES[idx]
+            self.cfg["gfx_profile"] = idx
+            save_config(self.cfg)
+            self._crashes = []
+            self.log(f"BlueStacks keeps crashing - switching its graphics to '{name}' and restarting.", "err")
+            edit = lambda: bs_conf_set(values)
+        else:
+            self.log(f"BlueStacks crashed or was closed ({len(self._crashes)} in 30 min) - restarting it.", "err")
+        self.bump("recoveries")
+        self.restart_emulator(while_closed=edit)
+
     def recover_adb(self, fails):
         self.adb.close_shell()
+        if self.emulator_restart_allowed() and not process_running(self.cfg["emulator_exe_path"]):
+            return self.emulator_crashed()
         try:
             if fails >= 2:
                 self.adb.host("kill-server", timeout=10)
@@ -2337,13 +2386,7 @@ class Bot:
         self._res_fixed = True
         self.log(f"The emulator is {w}x{h} - setting BlueStacks to 1920x1080 and restarting it.", "warn")
 
-        def edit():
-            s = open(conf, encoding="utf-8").read()
-            for key, val in (("fb_width", "1920"), ("fb_height", "1080"), ("dpi", "240")):
-                s = re.sub(rf'(bst\.instance\.[^.]+\.{key})="[^"]*"', rf'\1="{val}"', s)
-            with open(conf, "w", encoding="utf-8", newline="") as f:
-                f.write(s)
-        self.restart_emulator(while_closed=edit)
+        self.restart_emulator(while_closed=lambda: bs_conf_set({"fb_width": "1920", "fb_height": "1080", "dpi": "240"}))
 
     def restart_emulator(self, while_closed=None):
         now = time.time()
@@ -2358,11 +2401,12 @@ class Bot:
         subprocess.run(["taskkill", "/IM", os.path.basename(exe), "/T", "/F"], capture_output=True,
                        timeout=20, creationflags=NO_WINDOW)
         self.sleep(5)
-        if while_closed:  # BlueStacks rewrites its conf on exit, so settings are changed only while it's closed
-            try:
+        try:  # BlueStacks rewrites its conf on exit, so settings are changed only while it's closed
+            bs_conf_set(GFX_PROFILES[min(int(self.cfg.get("gfx_profile", 0)), len(GFX_PROFILES) - 1)][1])
+            if while_closed:
                 while_closed()
-            except OSError as e:
-                self.log(f"Couldn't change BlueStacks' settings: {e}", "err")
+        except OSError as e:
+            self.log(f"Couldn't change BlueStacks' settings: {e}", "err")
         subprocess.Popen([exe, *self.cfg["emulator_launch_args"].split()], creationflags=0x00000008)  # detached
         self.sleep(self.cfg["emulator_boot_wait"])
         end = time.time() + self.cfg["adb_ready_timeout"]
@@ -2377,7 +2421,13 @@ class Bot:
             self.log("Emulator didn't come back on ADB in time; will keep trying.", "warn")
             return
         self.emit("device", True)
-        self.launch_game()
+        for i in range(4):  # Android can still be starting up for a while after ADB answers
+            try:
+                return self.launch_game()
+            except ADBError as e:
+                self.log(f"Game launch after the emulator restart failed ({e}) - retrying.", "warn")
+                self.sleep(15)
+                self.reconnect()
 
 
 # ---------------------------------------------------------------------------
@@ -2602,6 +2652,40 @@ def pan_view(adb, where, frame_w=1920, frame_h=1080):
         time.sleep(0.25)
 
 
+BS_CONF = r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf"
+# Graphics setups to try, in order, when BlueStacks keeps crashing (typically on the game's loading clouds - a
+# graphics-driver crash, e.g. NVIDIA + Vulkan). 0 = leave BlueStacks as the user set it.
+GFX_PROFILES = [
+    ("as set in BlueStacks", {}),
+    ("OpenGL", {"graphics_renderer": "gl", "graphics_engine": "aga", "max_fps": "30"}),
+    ("OpenGL + Compatibility", {"graphics_renderer": "gl", "graphics_engine": "legacy", "max_fps": "30"}),
+    ("Vulkan + Compatibility", {"graphics_renderer": "vlcn", "graphics_engine": "legacy", "max_fps": "30"}),
+]
+
+
+def bs_conf_set(values):
+    """Set bst.instance.<every instance>.<key> in bluestacks.conf. Only while BlueStacks is closed: it rewrites
+    the file when it exits. A backup of the first original is kept next to it."""
+    if not values or not os.path.exists(BS_CONF):
+        return
+    if not os.path.exists(BS_CONF + ".lootfarmer-original"):
+        shutil.copy2(BS_CONF, BS_CONF + ".lootfarmer-original")
+    s = open(BS_CONF, encoding="utf-8").read()
+    for key, val in values.items():
+        s = re.sub(rf'(bst\.instance\.[^.\n]+\.{key})="[^"]*"', rf'\1="{val}"', s)
+    with open(BS_CONF, "w", encoding="utf-8", newline="") as f:
+        f.write(s)
+
+
+def process_running(exe):
+    try:
+        out = subprocess.run(["tasklist", "/FI", f"IMAGENAME eq {os.path.basename(exe)}", "/NH"], capture_output=True,
+                             text=True, timeout=15, creationflags=NO_WINDOW).stdout
+    except Exception:
+        return True  # can't tell: assume it's running rather than kill a working emulator
+    return os.path.basename(exe).lower() in out.lower()
+
+
 def post_discord(cfg, text, files=()):
     """Best effort: a failed post is logged, never raised. files: [(filename, bytes)], up to 10."""
     import base64
@@ -2652,6 +2736,56 @@ def single_instance():
             k32.CloseHandle(h)
         time.sleep(0.5)
     return None
+
+
+_TOUCH = {}
+
+
+def touch_device(adb):
+    """(path, max_x, max_y) of the emulator's multi-touch input device (BlueStacks: 'Virtual Touch'), or None."""
+    if "dev" not in _TOUCH:
+        dev = None
+        try:
+            out = adb.shell("getevent -p", timeout=10)
+        except ADBError:
+            return None  # try again next time
+        for block in out.split("add device")[1:]:
+            mx = re.search(r"0035\s*:.*?max (\d+)", block)
+            my = re.search(r"0036\s*:.*?max (\d+)", block)
+            if mx and my:
+                dev = (block.split(":", 1)[1].split()[0], int(mx.group(1)), int(my.group(1)))
+                break
+        _TOUCH["dev"] = dev
+    return _TOUCH["dev"]
+
+
+def zoom_out(adb, times=3, W=1920, H=1080):
+    """Two-finger pinch (fingers moving together) = the game's zoom-out, sent straight to the touch device.
+    Stops at the game's limit, so extra pinches are harmless. Used to find the boat: zoomed out, one screen shows
+    most of a village."""
+    d = touch_device(adb)
+    if not d:
+        return False
+    dev, mx, my = d
+    ev = lambda t, c, v: f"sendevent {dev} {t} {c} {v}"
+    for _ in range(times):
+        cmds = []
+        for i in range(9):
+            f = i / 8
+            for slot, (x0, x1) in enumerate(((460, 900), (1460, 1020))):
+                cmds.append(ev(3, 47, slot))
+                if i == 0:
+                    cmds.append(ev(3, 57, 100 + slot))
+                cmds += [ev(3, 53, int((x0 + (x1 - x0) * f) / W * mx)), ev(3, 54, int(480 / H * my))]
+            if i == 0:
+                cmds.append(ev(1, 330, 1))  # BTN_TOUCH down
+            cmds.append(ev(0, 0, 0))
+        for slot in (0, 1):
+            cmds += [ev(3, 47, slot), ev(3, 57, 4294967295)]
+        cmds += [ev(1, 330, 0), ev(0, 0, 0)]
+        adb.shell("; ".join(cmds), timeout=30)
+        time.sleep(0.4)
+    return True
 
 
 def battery():
@@ -2966,6 +3100,10 @@ class App(tk.Tk):
                         cursor="hand2")
         rep.pack(anchor="w")
         rep.bind("<Button-1>", lambda e: self.send_report("sent by hand"))
+        ver = ttk.Label(left, text=f"🕘  Version {APP_VERSION} - switch version", style="Sub.TLabel", foreground=BLUE,
+                        cursor="hand2")
+        ver.pack(anchor="w")
+        ver.bind("<Button-1>", lambda e: self.pick_version())
 
         right = ttk.Frame(head)
         right.pack(side="right")
@@ -3447,6 +3585,60 @@ class App(tk.Tk):
             self.ui(lambda: self.after(800, self._restart_now))
         self.bg(work)
 
+    def pick_version(self):
+        """List the published versions and install the chosen one (older or newer). Settings are kept."""
+        self.log("Loading the version list from GitHub…")
+
+        def work():
+            try:
+                vs = list_versions()
+            except Exception as e:
+                return self.log(f"Couldn't load the version list: {e}", "err")
+            self.ui(lambda: self._version_window(vs))
+        self.bg(work)
+
+    def _version_window(self, vs):
+        if not vs:
+            return self.log("No published versions found.", "warn")
+        w = tk.Toplevel(self)
+        w.title("Switch version")
+        w.configure(bg=BG)
+        w.transient(self)
+        f = ttk.Frame(w, padding=S(14))
+        f.pack(fill="both", expand=True)
+        ttk.Label(f, text=f"You have version {APP_VERSION}. Pick one to install - your settings, drop lines and "
+                          "accounts are kept.", style="Sub.TLabel").pack(anchor="w", pady=S(0, 8))
+        tree = self._tree(f, ("Version", "Published", "Notes"), (80, 110, 360), min(len(vs), 12))
+        tree.pack(fill="both", expand=True)
+        for v, d, m, sha in vs:
+            tree.insert("", "end", iid=sha, values=(f"v{v}" + ("  (current)" if v == APP_VERSION else ""), d, m))
+
+        def go():
+            sel = tree.selection()
+            if not sel:
+                return
+            v = next(x[0] for x in vs if x[3] == sel[0])
+            if not messagebox.askyesno("Switch version", f"Install version {v} and restart Loot Farmer?"
+                                       + ("\n\nFarming will be stopped." if self.thread else "")
+                                       + "\n\nAn 'Update available' button will offer the newest again."
+                                       + ("\n\nWARNING: this is your publishing folder - changes you haven't "
+                                          "published yet will be overwritten."
+                                          if os.path.isdir(os.path.join(BASE_DIR, ".git")) else ""), parent=w):
+                return
+            if self.thread:
+                self.bot.stop_evt.set()
+            w.destroy()
+
+            def work():
+                try:
+                    n = install_version(sel[0])
+                except Exception as e:
+                    return self.log(f"Switching version failed: {e}", "err")
+                self.log(f"Installed version {v} ({n} files) - restarting.", "ok")
+                self.ui(lambda: self.after(800, self._restart_now))
+            self.bg(work)
+        ttk.Button(f, text="Install selected version", style="Accent.TButton", command=go).pack(anchor="e", pady=S(10, 0))
+
     def _restart_now(self):
         self._close()
         exe = sys.executable
@@ -3898,9 +4090,9 @@ def file_hash(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def fetch(path, timeout=20):
+def fetch(path, timeout=20, ref="main"):
     import urllib.request
-    url = f"https://raw.githubusercontent.com/{UPDATE_REPO}/main/{path}?t={int(time.time())}"
+    url = f"https://raw.githubusercontent.com/{UPDATE_REPO}/{ref}/{path}?t={int(time.time())}"
     with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}),
                                 timeout=timeout) as r:
         return r.read()
@@ -3927,7 +4119,7 @@ def apply_update(man):
         if os.path.exists(local) and file_hash(local) == digest:
             continue
         import hashlib
-        data = fetch(path.replace(" ", "%20"))
+        data = fetch(path.replace(" ", "%20"), ref=man.get("ref", "main"))
         if hashlib.sha256(data).hexdigest() != digest:
             raise RuntimeError(f"{path}: download didn't match the published file - try again")
         changed[path] = data
@@ -3939,6 +4131,31 @@ def apply_update(man):
             f.write(data)
         os.replace(tmp, local)
     return len(changed)
+
+
+def list_versions(limit=30):
+    """Published versions, newest first: [(version, date, message, commit)]. Every publish commits manifest.json,
+    so its history is the version history."""
+    import urllib.request
+    url = f"https://api.github.com/repos/{UPDATE_REPO}/commits?path=manifest.json&per_page={limit}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "LootFarmer"}), timeout=20) as r:
+        commits = json.load(r)
+    out = []
+    for c in commits:
+        try:
+            man = json.loads(fetch("manifest.json", ref=c["sha"]))
+        except Exception:
+            continue
+        out.append((int(man.get("version", 0)), c["commit"]["committer"]["date"][:10],
+                    c["commit"]["message"].splitlines()[0][:60], c["sha"]))
+    return out
+
+
+def install_version(sha):
+    """Put this folder's files back to a published snapshot (settings untouched). Returns files changed."""
+    man = json.loads(fetch("manifest.json", ref=sha))
+    man["ref"] = sha
+    return apply_update(man)
 
 
 def publish(message):
