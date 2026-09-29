@@ -13,3 +13,7 @@ Tesseract-OCR/
 platform-tools/
 manifest.json.tmp
 *.new
+backups/
+config.json.*
+wiki_build.log
+build_wiki_data.py

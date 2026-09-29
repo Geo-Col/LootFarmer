@@ -1,0 +1,10061 @@
+{
+"home:barbarian king": {
+"name": "Barbarian King",
+"base": "home",
+"page": "Barbarian King",
+"icon": "icons/home_barbarian_king.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 5000,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 5500,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 6000,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 6500,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 7000,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 7500,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 8000,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 8500,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 10000,
+"res": "dark",
+"req": 1,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 10500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 11000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 11500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 12000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 12500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 13000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 13500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 14000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 14500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 15000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 17000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 19000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 21000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 23000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 25000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 26,
+"cost": 27000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 27,
+"cost": 29000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 28,
+"cost": 31000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 29,
+"cost": 33000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 30,
+"cost": 35000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 31,
+"cost": 37000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 32,
+"cost": 39000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 33,
+"cost": 41000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 34,
+"cost": 43000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 35,
+"cost": 45000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 36,
+"cost": 47000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 37,
+"cost": 49000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 38,
+"cost": 51000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 39,
+"cost": 53000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 40,
+"cost": 55000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 41,
+"cost": 58000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 42,
+"cost": 61000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 43,
+"cost": 64000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 44,
+"cost": 67000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 45,
+"cost": 70000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 46,
+"cost": 73000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 47,
+"cost": 76000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 48,
+"cost": 79000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 49,
+"cost": 82000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 50,
+"cost": 85000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 51,
+"cost": 86000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 52,
+"cost": 87000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 53,
+"cost": 88000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 54,
+"cost": 89000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 55,
+"cost": 90000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 56,
+"cost": 93000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 57,
+"cost": 96000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 58,
+"cost": 99000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 59,
+"cost": 102000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 60,
+"cost": 105000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 61,
+"cost": 107000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 62,
+"cost": 109000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 63,
+"cost": 111000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 64,
+"cost": 113000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 65,
+"cost": 115000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 66,
+"cost": 117000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 67,
+"cost": 119000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 68,
+"cost": 121000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 69,
+"cost": 123000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 70,
+"cost": 125000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 71,
+"cost": 130000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 72,
+"cost": 135000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 73,
+"cost": 140000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 74,
+"cost": 145000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 75,
+"cost": 150000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 76,
+"cost": 155000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 77,
+"cost": 160000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 78,
+"cost": 165000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 79,
+"cost": 170000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 80,
+"cost": 175000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 81,
+"cost": 180000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 82,
+"cost": 185000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 83,
+"cost": 195000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 84,
+"cost": 205000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 85,
+"cost": 215000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 86,
+"cost": 220000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 87,
+"cost": 230000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 88,
+"cost": 240000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 89,
+"cost": 250000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 90,
+"cost": 255000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 91,
+"cost": 280000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 92,
+"cost": 290000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 93,
+"cost": 300000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 94,
+"cost": 310000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 95,
+"cost": 320000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 96,
+"cost": 340000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 97,
+"cost": 350000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 98,
+"cost": 360000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 99,
+"cost": 370000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 100,
+"cost": 380000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 101,
+"cost": 400000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 102,
+"cost": 0,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 103,
+"cost": 420000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 104,
+"cost": 430000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 105,
+"cost": 450000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 106,
+"cost": 460000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 107,
+"cost": 470000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 108,
+"cost": 475000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 109,
+"cost": 485000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 110,
+"cost": 490000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:archer queen": {
+"name": "Archer Queen",
+"base": "home",
+"page": "Archer Queen",
+"icon": "icons/home_archer_queen.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 5000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 5500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 6000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 6500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 7000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 7500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 8000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 8500,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 10000,
+"res": "dark",
+"req": 2,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 10500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 11000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 11500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 12000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 12500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 13000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 13500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 14000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 14500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 15000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 17000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 19000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 21000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 23000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 25000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 26,
+"cost": 27000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 27,
+"cost": 29000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 28,
+"cost": 31000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 29,
+"cost": 33000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 30,
+"cost": 35000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 31,
+"cost": 37000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 32,
+"cost": 39000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 33,
+"cost": 41000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 34,
+"cost": 43000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 35,
+"cost": 45000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 36,
+"cost": 47000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 37,
+"cost": 49000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 38,
+"cost": 51000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 39,
+"cost": 53000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 40,
+"cost": 55000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 41,
+"cost": 58000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 42,
+"cost": 61000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 43,
+"cost": 64000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 44,
+"cost": 67000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 45,
+"cost": 70000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 46,
+"cost": 73000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 47,
+"cost": 76000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 48,
+"cost": 79000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 49,
+"cost": 82000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 50,
+"cost": 85000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 51,
+"cost": 86000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 52,
+"cost": 87000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 53,
+"cost": 88000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 54,
+"cost": 89000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 55,
+"cost": 90000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 56,
+"cost": 93000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 57,
+"cost": 96000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 58,
+"cost": 99000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 59,
+"cost": 102000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 60,
+"cost": 105000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 61,
+"cost": 107000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 62,
+"cost": 109000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 63,
+"cost": 111000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 64,
+"cost": 113000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 65,
+"cost": 115000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 66,
+"cost": 117000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 67,
+"cost": 119000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 68,
+"cost": 121000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 69,
+"cost": 123000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 70,
+"cost": 125000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 71,
+"cost": 130000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 72,
+"cost": 135000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 73,
+"cost": 140000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 74,
+"cost": 145000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 75,
+"cost": 150000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 76,
+"cost": 155000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 77,
+"cost": 160000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 78,
+"cost": 165000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 79,
+"cost": 170000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 80,
+"cost": 175000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 81,
+"cost": 180000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 82,
+"cost": 185000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 83,
+"cost": 190000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 84,
+"cost": 195000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 85,
+"cost": 200000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 86,
+"cost": 215000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 87,
+"cost": 225000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 88,
+"cost": 235000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 89,
+"cost": 245000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 90,
+"cost": 255000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 91,
+"cost": 280000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 92,
+"cost": 290000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 93,
+"cost": 300000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 94,
+"cost": 310000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 95,
+"cost": 320000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 96,
+"cost": 340000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 97,
+"cost": 350000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 98,
+"cost": 360000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 99,
+"cost": 370000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 100,
+"cost": 380000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 101,
+"cost": 400000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 102,
+"cost": 410000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 103,
+"cost": 420000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 104,
+"cost": 430000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 105,
+"cost": 450000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 106,
+"cost": 460000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 107,
+"cost": 470000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 108,
+"cost": 475000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 109,
+"cost": 485000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 110,
+"cost": 490000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:grand warden": {
+"name": "Grand Warden",
+"base": "home",
+"page": "Grand Warden",
+"icon": "icons/home_grand_warden.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 1000000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 1100000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 1200000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 1400000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 1500000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 1700000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 1800000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 2000000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 2300000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 2700000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 3000000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 3400000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 3700000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 4100000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 4400000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 4800000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 5100000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 5500000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 6000000,
+"res": "elixir",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 6100000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 6200000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 6300000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 6400000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 6500000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 26,
+"cost": 6600000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 27,
+"cost": 6700000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 28,
+"cost": 6800000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 29,
+"cost": 6900000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 30,
+"cost": 7000000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 31,
+"cost": 7100000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 32,
+"cost": 7200000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 33,
+"cost": 7300000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 34,
+"cost": 7400000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 35,
+"cost": 7500000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 36,
+"cost": 7600000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 37,
+"cost": 7700000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 38,
+"cost": 7800000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 39,
+"cost": 7900000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 40,
+"cost": 8000000,
+"res": "elixir",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 41,
+"cost": 8300000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 42,
+"cost": 8600000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 43,
+"cost": 8900000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 44,
+"cost": 9200000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 45,
+"cost": 9500000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 46,
+"cost": 9800000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 47,
+"cost": 10100000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 48,
+"cost": 10400000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 49,
+"cost": 10700000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 50,
+"cost": 11000000,
+"res": "elixir",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 51,
+"cost": 11400000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 52,
+"cost": 11800000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 53,
+"cost": 12200000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 54,
+"cost": 12600000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 55,
+"cost": 13000000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 56,
+"cost": 13400000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 57,
+"cost": 13800000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 58,
+"cost": 14200000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 59,
+"cost": 14600000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 60,
+"cost": 15000000,
+"res": "elixir",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 61,
+"cost": 15500000,
+"res": "elixir",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 62,
+"cost": 16000000,
+"res": "elixir",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 63,
+"cost": 16500000,
+"res": "elixir",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 64,
+"cost": 17000000,
+"res": "elixir",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 65,
+"cost": 17500000,
+"res": "elixir",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 66,
+"cost": 18000000,
+"res": "elixir",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 67,
+"cost": 18500000,
+"res": "elixir",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 68,
+"cost": 19000000,
+"res": "elixir",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 69,
+"cost": 19500000,
+"res": "elixir",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 70,
+"cost": 20000000,
+"res": "elixir",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 71,
+"cost": 20500000,
+"res": "elixir",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 72,
+"cost": 21000000,
+"res": "elixir",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 73,
+"cost": 21500000,
+"res": "elixir",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 74,
+"cost": 22000000,
+"res": "elixir",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 75,
+"cost": 22500000,
+"res": "elixir",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 76,
+"cost": 23500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 77,
+"cost": 24500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 78,
+"cost": 25500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 79,
+"cost": 26500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 80,
+"cost": 27500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 81,
+"cost": 28500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 82,
+"cost": 29000000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 83,
+"cost": 29500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 84,
+"cost": 30000000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 85,
+"cost": 30500000,
+"res": "elixir",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:royal champion": {
+"name": "Royal Champion",
+"base": "home",
+"page": "Royal Champion",
+"icon": "icons/home_royal_champion.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 10000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 15000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 20000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 25000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 30000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 35000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 40000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 45000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 50000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 53000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 56000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 59000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 62000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 65000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 70000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 75000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 80000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 85000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 90000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 95000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 100000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 105000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 110000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 115000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 26,
+"cost": 120000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 27,
+"cost": 125000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 28,
+"cost": 130000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 29,
+"cost": 135000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 30,
+"cost": 140000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 31,
+"cost": 145000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 32,
+"cost": 150000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 33,
+"cost": 155000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 34,
+"cost": 160000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 35,
+"cost": 165000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 36,
+"cost": 170000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 37,
+"cost": 175000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 38,
+"cost": 180000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 39,
+"cost": 200000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 40,
+"cost": 220000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 41,
+"cost": 240000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 42,
+"cost": 260000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 43,
+"cost": 280000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 44,
+"cost": 300000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 45,
+"cost": 320000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 46,
+"cost": 340000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 47,
+"cost": 350000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 48,
+"cost": 360000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 49,
+"cost": 370000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 50,
+"cost": 380000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 51,
+"cost": 400000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 52,
+"cost": 410000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 53,
+"cost": 420000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 54,
+"cost": 430000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 55,
+"cost": 450000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:minion prince": {
+"name": "Minion Prince",
+"base": "home",
+"page": "Minion Prince",
+"icon": "icons/home_minion_prince.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 5000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 5500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 6000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 6500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 7000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 7500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 8000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 8500,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 10000,
+"res": "dark",
+"req": 3,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 10500,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 11000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 11500,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 12000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 12500,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 13000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 13500,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 14000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 14500,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 15000,
+"res": "dark",
+"req": 4,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 17000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 19000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 21000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 23000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 25000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 26,
+"cost": 27000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 27,
+"cost": 29000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 28,
+"cost": 31000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 29,
+"cost": 33000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 30,
+"cost": 35000,
+"res": "dark",
+"req": 5,
+"hall": "hero hall"
+},
+{
+"level": 31,
+"cost": 36000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 32,
+"cost": 37000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 33,
+"cost": 38000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 34,
+"cost": 39000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 35,
+"cost": 40000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 36,
+"cost": 41000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 37,
+"cost": 42000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 38,
+"cost": 43000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 39,
+"cost": 44000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 40,
+"cost": 45000,
+"res": "dark",
+"req": 6,
+"hall": "hero hall"
+},
+{
+"level": 41,
+"cost": 50000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 42,
+"cost": 55000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 43,
+"cost": 60000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 44,
+"cost": 65000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 45,
+"cost": 70000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 46,
+"cost": 75000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 47,
+"cost": 80000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 48,
+"cost": 85000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 49,
+"cost": 90000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 50,
+"cost": 95000,
+"res": "dark",
+"req": 7,
+"hall": "hero hall"
+},
+{
+"level": 51,
+"cost": 100000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 52,
+"cost": 105000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 53,
+"cost": 110000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 54,
+"cost": 115000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 55,
+"cost": 120000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 56,
+"cost": 125000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 57,
+"cost": 130000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 58,
+"cost": 135000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 59,
+"cost": 140000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 60,
+"cost": 145000,
+"res": "dark",
+"req": 8,
+"hall": "hero hall"
+},
+{
+"level": 61,
+"cost": 150000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 62,
+"cost": 155000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 63,
+"cost": 160000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 64,
+"cost": 165000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 65,
+"cost": 170000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 66,
+"cost": 175000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 67,
+"cost": 180000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 68,
+"cost": 185000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 69,
+"cost": 190000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 70,
+"cost": 195000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 71,
+"cost": 200000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 72,
+"cost": 205000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 73,
+"cost": 210000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 74,
+"cost": 220000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 75,
+"cost": 230000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 76,
+"cost": 240000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 77,
+"cost": 250000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 78,
+"cost": 260000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 79,
+"cost": 270000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 80,
+"cost": 280000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 81,
+"cost": 290000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 82,
+"cost": 300000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 83,
+"cost": 310000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 84,
+"cost": 320000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 85,
+"cost": 330000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 86,
+"cost": 340000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 87,
+"cost": 350000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 88,
+"cost": 360000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 89,
+"cost": 370000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 90,
+"cost": 380000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 91,
+"cost": 400000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 92,
+"cost": 410000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 93,
+"cost": 420000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 94,
+"cost": 430000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 95,
+"cost": 450000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:dragon duke": {
+"name": "Dragon Duke",
+"base": "home",
+"page": "Dragon Duke",
+"icon": "icons/home_dragon_duke.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 2,
+"cost": 50000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 3,
+"cost": 60000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 4,
+"cost": 70000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 5,
+"cost": 80000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 6,
+"cost": 90000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 7,
+"cost": 100000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 8,
+"cost": 110000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 9,
+"cost": 120000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 10,
+"cost": 130000,
+"res": "dark",
+"req": 9,
+"hall": "hero hall"
+},
+{
+"level": 11,
+"cost": 150000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 12,
+"cost": 175000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 13,
+"cost": 200000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 14,
+"cost": 225000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 15,
+"cost": 250000,
+"res": "dark",
+"req": 10,
+"hall": "hero hall"
+},
+{
+"level": 16,
+"cost": 275000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 17,
+"cost": 300000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 18,
+"cost": 325000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 19,
+"cost": 350000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 20,
+"cost": 375000,
+"res": "dark",
+"req": 11,
+"hall": "hero hall"
+},
+{
+"level": 21,
+"cost": 400000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 22,
+"cost": 420000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 23,
+"cost": 440000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 24,
+"cost": 460000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+},
+{
+"level": 25,
+"cost": 480000,
+"res": "dark",
+"req": 12,
+"hall": "hero hall"
+}
+]
+},
+"home:hero hall": {
+"name": "Hero Hall",
+"base": "home",
+"page": "Hero Hall",
+"icon": "icons/home_hero_hall.png",
+"levels": [
+{
+"level": 1,
+"cost": 30000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1600000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 2300000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 2500000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 4500000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 5500000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 8500000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 9500000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 11000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 13000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 17000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 26000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:longshot": {
+"name": "Longshot",
+"base": "home",
+"page": "Longshot",
+"icon": "icons/home_longshot.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 2,
+"cost": 18000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 3,
+"cost": 22000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 4,
+"cost": 26000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 5,
+"cost": 28000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+}
+]
+},
+"home:smasher": {
+"name": "Smasher",
+"base": "home",
+"page": "Smasher",
+"icon": "icons/home_smasher.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 2,
+"cost": 18000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 3,
+"cost": 22000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 4,
+"cost": 26000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 5,
+"cost": 28000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+}
+]
+},
+"home:logger": {
+"name": "Logger",
+"base": "home",
+"page": "Logger",
+"icon": "icons/home_logger.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 2,
+"cost": 18000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 3,
+"cost": 22000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 4,
+"cost": 26000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+},
+{
+"level": 5,
+"cost": 28000000,
+"res": "elixir",
+"req": 0,
+"hall": "none"
+}
+]
+},
+"home:laboratory": {
+"name": "Laboratory",
+"base": "home",
+"page": "Laboratory",
+"icon": "icons/home_laboratory.png",
+"levels": [
+{
+"level": 1,
+"cost": 5000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 25000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 50000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 100000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 200000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 400000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 800000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 1300000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 2100000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 3800000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 5500000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 8100000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 10800000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 13000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 18000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 27000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:army camp": {
+"name": "Army Camp",
+"base": "home",
+"page": "Army Camp/Home_Village",
+"icon": "icons/home_army_camp.png",
+"levels": [
+{
+"level": 1,
+"cost": 200,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 2000,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 100000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 250000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 500000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1500000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2500000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 4200000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 4500000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 7500000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 10000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 17000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 26000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:barracks": {
+"name": "Barracks",
+"base": "home",
+"page": "Barracks",
+"icon": "icons/home_barracks.png",
+"levels": [
+{
+"level": 1,
+"cost": 100,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 500,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 2500,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 5000,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 20000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 120000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 270000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 600000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 1000000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 1400000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 2600000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 3700000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 6000000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 7000000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 9000000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 11000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 12600000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 15000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 26000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+}
+]
+},
+"home:dark barracks": {
+"name": "Dark Barracks",
+"base": "home",
+"page": "Dark Barracks",
+"icon": "icons/home_dark_barracks.png",
+"levels": [
+{
+"level": 1,
+"cost": 200000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 600000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1000000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1600000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 2200000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 2900000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 4000000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 7000000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 7200000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 10000000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 12000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 20000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 23000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:spell factory": {
+"name": "Spell Factory",
+"base": "home",
+"page": "Spell Factory",
+"icon": "icons/home_spell_factory.png",
+"levels": [
+{
+"level": 1,
+"cost": 150000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 300000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 600000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1200000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 2000000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 3500000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 9000000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 14000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 24000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:dark spell factory": {
+"name": "Dark Spell Factory",
+"base": "home",
+"page": "Dark Spell Factory",
+"icon": "icons/home_dark_spell_factory.png",
+"levels": [
+{
+"level": 1,
+"cost": 130000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 260000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 600000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1200000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 2500000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 4000000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 11000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 18000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+}
+]
+},
+"home:clan castle": {
+"name": "Clan Castle",
+"base": "home",
+"page": "Clan Castle",
+"icon": "icons/home_clan_castle.png",
+"levels": [
+{
+"level": 1,
+"cost": 10000,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 50000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 600000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1200000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 2000000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 3000000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 5000000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 5000000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 8000000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 10000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 12000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 14500000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 19000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 28000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:workshop": {
+"name": "Workshop",
+"base": "home",
+"page": "Workshop",
+"icon": "icons/home_workshop.png",
+"levels": [
+{
+"level": 1,
+"cost": 2400000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 3700000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 5000000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 8700000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 9000000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 10000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 11000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 13000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 26000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+}
+]
+},
+"home:pet house": {
+"name": "Pet House",
+"base": "home",
+"page": "Pet House",
+"icon": "icons/home_pet_house.png",
+"levels": [
+{
+"level": 1,
+"cost": 3000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 4000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 5000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 6000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 7000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 8000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 9000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 10000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 11000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 12000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 16500000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 25500000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:cannon": {
+"name": "Cannon",
+"base": "home",
+"page": "Cannon/Home_Village",
+"icon": "icons/home_cannon.png",
+"levels": [
+{
+"level": 1,
+"cost": 250,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1000,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 4000,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 16000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 50000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 60000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 100000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 160000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 250000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 330000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 500000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 600000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 660000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 1000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 1200000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 1300000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 1500000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 1800000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 2000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 20,
+"cost": 2600000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 21,
+"cost": 3000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+}
+]
+},
+"home:archer tower": {
+"name": "Archer Tower",
+"base": "home",
+"page": "Archer Tower/Home_Village",
+"icon": "icons/home_archer_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 2000,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 5000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 20000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 70000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 80000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 150000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 200000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 400000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 460000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 600000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 700000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 1000000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 1100000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 1300000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 1600000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 1800000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 2000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 2200000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 20,
+"cost": 3000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 21,
+"cost": 4000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+}
+]
+},
+"home:mortar": {
+"name": "Mortar",
+"base": "home",
+"page": "Mortar",
+"icon": "icons/home_mortar.png",
+"levels": [
+{
+"level": 1,
+"cost": 5000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 25000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 90000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 180000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 300000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 500000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 900000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 1200000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 1600000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 1800000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 2300000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 2400000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 2800000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 4300000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 5000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 7000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 13000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 21000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:air defense": {
+"name": "Air Defense",
+"base": "home",
+"page": "Air Defense/Home_Village",
+"icon": "icons/home_air_defense.png",
+"levels": [
+{
+"level": 1,
+"cost": 22000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 90000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 210000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 500000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 800000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1750000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2300000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 3400000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 5000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 5600000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 6500000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 8000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 9000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 15000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 26000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:wizard tower": {
+"name": "Wizard Tower",
+"base": "home",
+"page": "Wizard Tower",
+"icon": "icons/home_wizard_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 100000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 150000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 250000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 400000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 550000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 660000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1000000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 1100000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 1300000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 2000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 2500000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 2600000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 3000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 4500000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 5500000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 8000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 14000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+}
+]
+},
+"home:air sweeper": {
+"name": "Air Sweeper",
+"base": "home",
+"page": "Air Sweeper",
+"icon": "icons/home_air_sweeper.png",
+"levels": [
+{
+"level": 1,
+"cost": 200000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 300000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 450000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 800000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 1200000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1900000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 3400000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+}
+]
+},
+"home:hidden tesla": {
+"name": "Hidden Tesla",
+"base": "home",
+"page": "Hidden Tesla/Home_Village",
+"icon": "icons/home_hidden_tesla.png",
+"levels": [
+{
+"level": 1,
+"cost": 250000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 350000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 500000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 600000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 800000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1200000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1400000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 1600000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 2100000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 3000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 3100000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 3700000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 5100000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 6500000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 8200000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 15000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 25000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:bomb tower": {
+"name": "Bomb Tower",
+"base": "home",
+"page": "Bomb Tower/Home_Village",
+"icon": "icons/home_bomb_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 700000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1000000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1300000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1800000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 1900000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 2000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 4000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 5000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 6000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 7000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 8500000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 14500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 25000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:x bow": {
+"name": "X-Bow",
+"base": "home",
+"page": "X-Bow/Home_Village",
+"icon": "icons/home_x_bow.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1200000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 2400000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 2500000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 3900000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 5000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 6000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 7000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 9000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 9500000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 10000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 16000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 26000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:inferno tower": {
+"name": "Inferno Tower",
+"base": "home",
+"page": "Inferno Tower/Home_Village",
+"icon": "icons/home_inferno_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1200000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 2400000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 3400000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 4200000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 6000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 8000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 9500000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 10000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 11000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 16000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 26500000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:eagle artillery": {
+"name": "Eagle Artillery",
+"base": "home",
+"page": "Eagle Artillery",
+"icon": "icons/home_eagle_artillery.png",
+"levels": [
+{
+"level": 1,
+"cost": 5000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 6000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 9000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 10000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 12000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 13000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 14000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:scattershot": {
+"name": "Scattershot",
+"base": "home",
+"page": "Scattershot",
+"icon": "icons/home_scattershot.png",
+"levels": [
+{
+"level": 1,
+"cost": 8000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 9000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 11000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 11500000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 12000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 16500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 26500000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:builders hut": {
+"name": "Builder's Hut",
+"base": "home",
+"page": "Builder's Hut",
+"icon": "icons/home_builders_hut.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 3000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 4000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 6000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 7000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 8000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 15500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 24000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:spell tower": {
+"name": "Spell Tower",
+"base": "home",
+"page": "Spell Tower",
+"icon": "icons/home_spell_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 9000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 11000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 12000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 27000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+}
+]
+},
+"home:monolith": {
+"name": "Monolith",
+"base": "home",
+"page": "Monolith",
+"icon": "icons/home_monolith.png",
+"levels": [
+{
+"level": 1,
+"cost": 200000,
+"res": "dark",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 250000,
+"res": "dark",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 260000,
+"res": "dark",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "dark",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 470000,
+"res": "dark",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:multi archer tower": {
+"name": "Multi-Archer Tower",
+"base": "home",
+"page": "Multi-Archer Tower",
+"icon": "icons/home_multi_archer_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 12000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 13000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 17500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 27000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:ricochet cannon": {
+"name": "Ricochet Cannon",
+"base": "home",
+"page": "Ricochet Cannon",
+"icon": "icons/home_ricochet_cannon.png",
+"levels": [
+{
+"level": 1,
+"cost": 12000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 13000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 17500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 26500000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:firespitter": {
+"name": "Firespitter",
+"base": "home",
+"page": "Firespitter",
+"icon": "icons/home_firespitter.png",
+"levels": [
+{
+"level": 1,
+"cost": 17000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 18000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 29000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:multi gear tower": {
+"name": "Multi-Gear Tower",
+"base": "home",
+"page": "Multi-Gear Tower",
+"icon": "icons/home_multi_gear_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 17000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 18000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 28000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:bomb": {
+"name": "Bomb",
+"base": "home",
+"page": "Bomb",
+"icon": "icons/home_bomb.png",
+"levels": [
+{
+"level": 1,
+"cost": 400,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 40000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 100000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 230000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 330000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 500000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 750000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 1300000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 2500000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 4000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 8500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 14000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:spring trap": {
+"name": "Spring Trap",
+"base": "home",
+"page": "Spring Trap/Home_Village",
+"icon": "icons/home_spring_trap.png",
+"levels": [
+{
+"level": 1,
+"cost": 2000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 130000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 240000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 350000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 800000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1700000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 3000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 4000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 6000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 13000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 16000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:giant bomb": {
+"name": "Giant Bomb",
+"base": "home",
+"page": "Giant Bomb",
+"icon": "icons/home_giant_bomb.png",
+"levels": [
+{
+"level": 1,
+"cost": 12500,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 75000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 220000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 750000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 900000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1300000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1500000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 3200000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 5500000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 10000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 17000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:giga bomb": {
+"name": "Giga Bomb",
+"base": "home",
+"page": "Giga Bomb",
+"icon": "icons/home_giga_bomb.png",
+"levels": [
+{
+"level": 1,
+"cost": 4500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 8500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 12500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 20000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:air bomb": {
+"name": "Air Bomb",
+"base": "home",
+"page": "Air Bomb",
+"icon": "icons/home_air_bomb.png",
+"levels": [
+{
+"level": 1,
+"cost": 4000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 20000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 75000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 550000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 800000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 1200000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 2000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 3000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 5000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 9500000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 15000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:seeking air mine": {
+"name": "Seeking Air Mine",
+"base": "home",
+"page": "Seeking Air Mine",
+"icon": "icons/home_seeking_air_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 12000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 600000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1200000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 2500000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 5000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 6500000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 12000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 19000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:skeleton trap": {
+"name": "Skeleton Trap",
+"base": "home",
+"page": "Skeleton Trap",
+"icon": "icons/home_skeleton_trap.png",
+"levels": [
+{
+"level": 1,
+"cost": 6000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 250000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 400000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1000000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 18000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:tornado trap": {
+"name": "Tornado Trap",
+"base": "home",
+"page": "Tornado Trap",
+"icon": "icons/home_tornado_trap.png",
+"levels": [
+{
+"level": 1,
+"cost": 1800000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 2000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 2500000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+}
+]
+},
+"home:gold mine": {
+"name": "Gold Mine",
+"base": "home",
+"page": "Gold Mine/Home_Village",
+"icon": "icons/home_gold_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 150,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 300,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 700,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1400,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 3000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 7000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 14000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 28000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 56000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 75000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 85000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 170000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 400000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 800000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 1200000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 2000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 8000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:elixir collector": {
+"name": "Elixir Collector",
+"base": "home",
+"page": "Elixir Collector/Home_Village",
+"icon": "icons/home_elixir_collector.png",
+"levels": [
+{
+"level": 1,
+"cost": 150,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 300,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 700,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1400,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 3000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 7000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 14000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 28000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 56000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 75000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 85000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 170000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 400000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 800000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 1200000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 2000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 8000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:dark elixir drill": {
+"name": "Dark Elixir Drill",
+"base": "home",
+"page": "Dark Elixir Drill",
+"icon": "icons/home_dark_elixir_drill.png",
+"levels": [
+{
+"level": 1,
+"cost": 180000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 270000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 540000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 900000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 1200000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 1800000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 2100000,
+"res": "elixir",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2400000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 3700000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 5300000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 12000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+}
+]
+},
+"home:gold storage": {
+"name": "Gold Storage",
+"base": "home",
+"page": "Gold Storage/Home_Village",
+"icon": "icons/home_gold_storage.png",
+"levels": [
+{
+"level": 1,
+"cost": 300,
+"res": "elixir",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 750,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1500,
+"res": "elixir",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 3000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 6000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 12000,
+"res": "elixir",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 25000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 50000,
+"res": "elixir",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 100000,
+"res": "elixir",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 250000,
+"res": "elixir",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 500000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 1000000,
+"res": "elixir",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 1800000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 2800000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 3000000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 4000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 5500000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 10000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 18000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:elixir storage": {
+"name": "Elixir Storage",
+"base": "home",
+"page": "Elixir Storage/Home_Village",
+"icon": "icons/home_elixir_storage.png",
+"levels": [
+{
+"level": 1,
+"cost": 300,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 750,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1500,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 3000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 6000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 12000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 25000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 50000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 100000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 250000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 500000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 1000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 1800000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 2800000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 3000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 4000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 5500000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 10000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 18000000,
+"res": "gold",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:dark elixir storage": {
+"name": "Dark Elixir Storage",
+"base": "home",
+"page": "Dark Elixir Storage",
+"icon": "icons/home_dark_elixir_storage.png",
+"levels": [
+{
+"level": 1,
+"cost": 250000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 500000,
+"res": "elixir",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 1000000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 1500000,
+"res": "elixir",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 2000000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 2400000,
+"res": "elixir",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 3800000,
+"res": "elixir",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 5400000,
+"res": "elixir",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 6600000,
+"res": "elixir",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 8000000,
+"res": "elixir",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 10000000,
+"res": "elixir",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 16000000,
+"res": "elixir",
+"req": 17,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 25000000,
+"res": "elixir",
+"req": 18,
+"hall": "town hall"
+}
+]
+},
+"home:town hall": {
+"name": "Town Hall",
+"base": "home",
+"page": "Town Hall",
+"icon": "icons/home_town_hall.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "gold",
+"req": 0,
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1000,
+"res": "gold",
+"req": 1,
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 4000,
+"res": "gold",
+"req": 2,
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 25000,
+"res": "gold",
+"req": 3,
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 150000,
+"res": "gold",
+"req": 4,
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 500000,
+"res": "gold",
+"req": 5,
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 1000000,
+"res": "gold",
+"req": 6,
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 2000000,
+"res": "gold",
+"req": 7,
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 2500000,
+"res": "gold",
+"req": 8,
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 3500000,
+"res": "gold",
+"req": 9,
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 4000000,
+"res": "gold",
+"req": 10,
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 6000000,
+"res": "gold",
+"req": 11,
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 9000000,
+"res": "gold",
+"req": 12,
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 12000000,
+"res": "gold",
+"req": 13,
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 13000000,
+"res": "gold",
+"req": 14,
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 15000000,
+"res": "gold",
+"req": 15,
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 16000000,
+"res": "gold",
+"req": 16,
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 25000000,
+"res": "gold",
+"req": 17,
+"hall": "town hall"
+}
+]
+},
+"builder:builder hall": {
+"name": "Builder Hall",
+"base": "builder",
+"page": "Builder Hall",
+"icon": "icons/builder_builder_hall.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "gold",
+"req": 0,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 3500,
+"res": "gold",
+"req": 1,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 30000,
+"res": "gold",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 200000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 400000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1200000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1800000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2800000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 3800000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 4800000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+}
+]
+},
+"builder:ottos outpost": {
+"name": "O.T.T.O's Outpost",
+"base": "builder",
+"page": "O.T.T.O's Outpost",
+"icon": "icons/builder_ottos_outpost.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 1000000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 1250000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 1500000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1750000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 2000000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 3000000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 4000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 5000000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 6000000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:battle machine": {
+"name": "Battle Machine",
+"base": "builder",
+"page": "Battle Machine",
+"icon": "icons/builder_battle_machine.png",
+"levels": [
+{
+"level": 1,
+"cost": 900000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 1000000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 1100000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 1200000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1300000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1500000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1600000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 1700000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 1800000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 1900000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 11,
+"cost": 2100000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 12,
+"cost": 2200000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 13,
+"cost": 2300000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 14,
+"cost": 2400000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 15,
+"cost": 2500000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 16,
+"cost": 2600000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 17,
+"cost": 2700000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 18,
+"cost": 2800000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 19,
+"cost": 2900000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 20,
+"cost": 3000000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 21,
+"cost": 3100000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 22,
+"cost": 3200000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 23,
+"cost": 3300000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 24,
+"cost": 3400000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 25,
+"cost": 3500000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 26,
+"cost": 3600000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 27,
+"cost": 3700000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 28,
+"cost": 3800000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 29,
+"cost": 3900000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 30,
+"cost": 4000000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 31,
+"cost": 4100000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 32,
+"cost": 4200000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 33,
+"cost": 4300000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 34,
+"cost": 4400000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 35,
+"cost": 4500000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:battle copter": {
+"name": "Battle Copter",
+"base": "builder",
+"page": "Battle Copter",
+"icon": "icons/builder_battle_copter.png",
+"levels": [
+{
+"level": 15,
+"cost": 2500000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 16,
+"cost": 2600000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 17,
+"cost": 2700000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 18,
+"cost": 2800000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 19,
+"cost": 2900000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 20,
+"cost": 3000000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 21,
+"cost": 3100000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 22,
+"cost": 3200000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 23,
+"cost": 3300000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 24,
+"cost": 3400000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 25,
+"cost": 3500000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 26,
+"cost": 3600000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 27,
+"cost": 3700000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 28,
+"cost": 3800000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 29,
+"cost": 3900000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 30,
+"cost": 4000000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 31,
+"cost": 4100000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 32,
+"cost": 4200000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 33,
+"cost": 4300000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 34,
+"cost": 4400000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 35,
+"cost": 4500000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:builder barracks": {
+"name": "Builder Barracks",
+"base": "builder",
+"page": "Builder Barracks",
+"icon": "icons/builder_builder_barracks.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "elixir",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 4000,
+"res": "elixir",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 25000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 100000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 150000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 300000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 500000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 1000000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 1500000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 11,
+"cost": 2000000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 12,
+"cost": 3000000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:star laboratory": {
+"name": "Star Laboratory",
+"base": "builder",
+"page": "Star Laboratory",
+"icon": "icons/builder_star_laboratory.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "elixir",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 15000,
+"res": "elixir",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 50000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 700000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2000000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3000000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4000000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5000000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:clock tower": {
+"name": "Clock Tower",
+"base": "builder",
+"page": "Clock Tower",
+"icon": "icons/builder_clock_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 150000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 180000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 220000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 700000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1200000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1700000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2200000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 2700000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 3700000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:gem mine": {
+"name": "Gem Mine",
+"base": "builder",
+"page": "Gem Mine",
+"icon": "icons/builder_gem_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 120000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 180000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 240000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 450000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1000000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1500000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2500000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3500000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4500000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5500000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:healing hut": {
+"name": "Healing Hut",
+"base": "builder",
+"page": "Healing Hut",
+"icon": "icons/builder_healing_hut.png",
+"levels": [
+{
+"level": 1,
+"cost": 1500000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 2000000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 2500000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 3250000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 4000000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 5000000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:cannon": {
+"name": "Cannon",
+"base": "builder",
+"page": "Cannon/Builder_Base",
+"icon": "icons/builder_cannon.png",
+"levels": [
+{
+"level": 1,
+"cost": 10000,
+"res": "gold",
+"req": 1,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 20000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 50000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 200000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 600000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1800000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2500000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 3300000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 4500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:double cannon": {
+"name": "Double Cannon",
+"base": "builder",
+"page": "Double Cannon",
+"icon": "icons/builder_double_cannon.png",
+"levels": [
+{
+"level": 1,
+"cost": 20000,
+"res": "gold",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 50000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 80000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 900000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1400000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2200000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3200000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4200000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5200000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:archer tower": {
+"name": "Archer Tower",
+"base": "builder",
+"page": "Archer Tower/Builder_Base",
+"icon": "icons/builder_archer_tower.png",
+"levels": [
+{
+"level": 1,
+"cost": 12000,
+"res": "gold",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 30000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 60000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 250000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 800000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1200000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2000000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2800000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 3600000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 4600000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:hidden tesla": {
+"name": "Hidden Tesla",
+"base": "builder",
+"page": "Hidden Tesla/Builder_Base",
+"icon": "icons/builder_hidden_tesla.png",
+"levels": [
+{
+"level": 1,
+"cost": 50000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 100000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 150000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 280000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 700000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1300000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2100000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3100000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4100000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5100000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:firecrackers": {
+"name": "Firecrackers",
+"base": "builder",
+"page": "Firecrackers",
+"icon": "icons/builder_firecrackers.png",
+"levels": [
+{
+"level": 1,
+"cost": 40000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 80000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 120000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 800000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1200000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2000000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4000000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5000000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:crusher": {
+"name": "Crusher",
+"base": "builder",
+"page": "Crusher/Builder_Base",
+"icon": "icons/builder_crusher.png",
+"levels": [
+{
+"level": 1,
+"cost": 120000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 180000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 220000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 350000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1200000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1500000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2400000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3400000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4400000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5400000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:guard post": {
+"name": "Guard Post",
+"base": "builder",
+"page": "Guard Post",
+"icon": "icons/builder_guard_post.png",
+"levels": [
+{
+"level": 1,
+"cost": 200000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 240000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 280000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 320000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1000000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1400000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2300000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3200000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4100000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5100000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:air bombs": {
+"name": "Air Bombs",
+"base": "builder",
+"page": "Air Bombs/Builder_Base",
+"icon": "icons/builder_air_bombs.png",
+"levels": [
+{
+"level": 1,
+"cost": 300000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 320000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 340000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 360000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1200000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1500000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2400000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3400000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4400000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5400000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:multi mortar": {
+"name": "Multi Mortar",
+"base": "builder",
+"page": "Multi Mortar/Builder_Base",
+"icon": "icons/builder_multi_mortar.png",
+"levels": [
+{
+"level": 1,
+"cost": 600000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 700000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 800000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 1000000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1200000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1600000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2500000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3500000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4500000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:roaster": {
+"name": "Roaster",
+"base": "builder",
+"page": "Roaster/Builder_Base",
+"icon": "icons/builder_roaster.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 1200000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 1400000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 1500000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 1600000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1700000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2600000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3600000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4600000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5600000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:giant cannon": {
+"name": "Giant Cannon",
+"base": "builder",
+"page": "Giant Cannon/Builder_Base",
+"icon": "icons/builder_giant_cannon.png",
+"levels": [
+{
+"level": 1,
+"cost": 2000000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 2100000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 2200000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 2300000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 2400000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 2500000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 2700000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 3800000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4700000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5700000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:mega tesla": {
+"name": "Mega Tesla",
+"base": "builder",
+"page": "Mega Tesla",
+"icon": "icons/builder_mega_tesla.png",
+"levels": [
+{
+"level": 1,
+"cost": 3000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 3100000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 3200000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 3300000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 3400000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 3600000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 3800000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 4000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4800000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5800000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:lava launcher": {
+"name": "Lava Launcher",
+"base": "builder",
+"page": "Lava Launcher/Builder_Base",
+"icon": "icons/builder_lava_launcher.png",
+"levels": [
+{
+"level": 1,
+"cost": 3000000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 3100000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 3200000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 3400000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 3700000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 4000000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 4300000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 4600000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 4900000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 5900000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:x bow": {
+"name": "X-Bow",
+"base": "builder",
+"page": "X-Bow/Builder_Base",
+"icon": "icons/builder_x_bow.png",
+"levels": [
+{
+"level": 1,
+"cost": 4400000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 4800000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 5200000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 5600000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 6000000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:push trap": {
+"name": "Push Trap",
+"base": "builder",
+"page": "Push Trap",
+"icon": "icons/builder_push_trap.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "gold",
+"req": 2,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 3000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 20000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 40000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 60000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 100000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 200000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 300000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:spring trap": {
+"name": "Spring Trap",
+"base": "builder",
+"page": "Spring Trap/Builder_Base",
+"icon": "icons/builder_spring_trap.png",
+"levels": [
+{
+"level": 1,
+"cost": 10000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 30000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 100000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:mine": {
+"name": "Mine",
+"base": "builder",
+"page": "Mine/Builder_Base",
+"icon": "icons/builder_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 5000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 10000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 15000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 25000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 50000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 80000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 120000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 250000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 500000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 1500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:mega mine": {
+"name": "Mega Mine",
+"base": "builder",
+"page": "Mega Mine/Builder_Base",
+"icon": "icons/builder_mega_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 30000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 40000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 50000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 80000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 120000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 300000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 600000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 1000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 1400000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 2500000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:gold mine": {
+"name": "Gold Mine",
+"base": "builder",
+"page": "Gold Mine/Builder_Base",
+"icon": "icons/builder_gold_mine.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "elixir",
+"req": 1,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 5000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 30000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 60000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 100000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 200000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 300000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 400000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 800000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:elixir collector": {
+"name": "Elixir Collector",
+"base": "builder",
+"page": "Elixir Collector/Builder_Base",
+"icon": "icons/builder_elixir_collector.png",
+"levels": [
+{
+"level": 1,
+"cost": 1000,
+"res": "gold",
+"req": 1,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 5000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 10000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 30000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 60000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 100000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 200000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 300000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 400000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 800000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:gold storage": {
+"name": "Gold Storage",
+"base": "builder",
+"page": "Gold Storage/Builder_Base",
+"icon": "icons/builder_gold_storage.png",
+"levels": [
+{
+"level": 1,
+"cost": 20000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 80000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 200000,
+"res": "elixir",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "elixir",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 600000,
+"res": "elixir",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "elixir",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1500000,
+"res": "elixir",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2000000,
+"res": "elixir",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 2500000,
+"res": "elixir",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 3200000,
+"res": "elixir",
+"req": 10,
+"hall": "builder hall"
+}
+]
+},
+"builder:elixir storage": {
+"name": "Elixir Storage",
+"base": "builder",
+"page": "Elixir Storage/Builder_Base",
+"icon": "icons/builder_elixir_storage.png",
+"levels": [
+{
+"level": 1,
+"cost": 20000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 2,
+"cost": 80000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 3,
+"cost": 200000,
+"res": "gold",
+"req": 3,
+"hall": "builder hall"
+},
+{
+"level": 4,
+"cost": 300000,
+"res": "gold",
+"req": 4,
+"hall": "builder hall"
+},
+{
+"level": 5,
+"cost": 600000,
+"res": "gold",
+"req": 5,
+"hall": "builder hall"
+},
+{
+"level": 6,
+"cost": 1000000,
+"res": "gold",
+"req": 6,
+"hall": "builder hall"
+},
+{
+"level": 7,
+"cost": 1500000,
+"res": "gold",
+"req": 7,
+"hall": "builder hall"
+},
+{
+"level": 8,
+"cost": 2000000,
+"res": "gold",
+"req": 8,
+"hall": "builder hall"
+},
+{
+"level": 9,
+"cost": 2500000,
+"res": "gold",
+"req": 9,
+"hall": "builder hall"
+},
+{
+"level": 10,
+"cost": 3200000,
+"res": "gold",
+"req": 10,
+"hall": "builder hall"
+}
+]
+}
+}

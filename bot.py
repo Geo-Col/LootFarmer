@@ -65,7 +65,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 14  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 15  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -98,6 +98,7 @@ BUTTONS = [
     ("supercell_id_header", "Supercell ID panel logo  - accounts"),
     ("lab_picker_title", "Lab 'Choose what to upgrade' title  - upgrades"),
     ("guardians_title", "'Guardians' window title  - upgrades"),
+    ("reload_game", "'Anyone there?' disconnect: RELOAD GAME  - recovery"),
     ("bb_boat", "Boat's sail bubble (both villages)  - builder base"),
     ("bb_attack_button", "Builder Base Attack! (axes)  - builder base"),
     ("bb_find_now", "Builder Base Find Now!  - builder base"),
@@ -340,8 +341,19 @@ def load_config():
 
 
 def save_config(cfg):
-    """Atomic write: a kill mid-save can't corrupt config.json."""
+    """Atomic write: a kill mid-save can't corrupt config.json. The day's first save keeps yesterday's file in
+    backups/ (last 7 days), so settings / drop lines / plans can always be got back."""
     with _cfg_lock:
+        try:
+            bdir = os.path.join(BASE_DIR, "backups")
+            day = os.path.join(bdir, f"config-{time.strftime('%Y-%m-%d')}.json")
+            if os.path.exists(CONFIG_FILE) and not os.path.exists(day):
+                os.makedirs(bdir, exist_ok=True)
+                shutil.copy2(CONFIG_FILE, day)
+                for old in sorted(f for f in os.listdir(bdir) if f.startswith("config-"))[:-7]:
+                    os.remove(os.path.join(bdir, old))
+        except OSError:
+            pass  # a backup problem must never stop the save
         tmp = CONFIG_FILE + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
@@ -921,6 +933,147 @@ def confirm_price(frame, hit):
     return read_digit_blobs((hsv[:, :, 0] >= 18) & (hsv[:, :, 0] <= 35) & (hsv[:, :, 1] > 120) & (hsv[:, :, 2] > 200))
 
 
+# Built-in categories (lower-case, matched fuzzily). Anything not here is 'other'.
+UPGRADE_CATEGORIES = {
+    "heroes": ["barbarian king", "archer queen", "grand warden", "royal champion", "minion prince", "dragon duke", "hero hall",
+               "battle machine", "battle copter"],
+    "guardians": ["longshot", "smasher", "logger"],
+    "army": ["laboratory", "army camp", "barracks", "dark barracks", "spell factory", "dark spell factory",
+             "clan castle", "workshop", "pet house", "blacksmith", "builder barracks", "star laboratory",
+             "reinforcement camp", "healing hut", "clock tower", "ottos outpost"],
+    "defences": ["cannon", "archer tower", "mortar", "air defense", "wizard tower", "air sweeper", "hidden tesla",
+                 "bomb tower", "x bow", "inferno tower", "eagle artillery", "scattershot", "builders hut",
+                 "spell tower", "monolith", "multi archer tower", "ricochet cannon", "firespitter",
+                 "multi gear tower", "double cannon", "firecrackers", "crusher", "guard post", "multi mortar",
+                 "roaster", "giant cannon", "mega tesla", "lava launcher", "air bombs"],
+    "traps": ["bomb", "spring trap", "giant bomb", "giga bomb", "air bomb", "seeking air mine", "skeleton trap", "tornado trap",
+              "push trap", "mine", "mega mine"],
+    "resources": ["gold mine", "elixir collector", "dark elixir drill", "gold storage", "elixir storage",
+                  "dark elixir storage", "gem mine"],
+    "town hall": ["town hall", "builder hall"],
+}
+# Builder Base: without a list of your own, go for the Builder Hall and the 6th builder (O.T.T.O / B.O.B's hut) first
+BB_DEFAULT_ROWS = [{"name": n, "base": "builder", "th": ""} for n in
+                   ("builder hall", "ottos outpost", "battle machine", "battle copter", "builder barracks",
+                    "star laboratory", "clock tower")]
+
+
+def norm_name(s):
+    """'Archer Tower x3' / 'Lonashot&' / 'Builder's Hut (lvl 5)' -> 'archer tower' / 'lonashot' / 'builders hut'."""
+    s = re.sub(r"\(.*?\)", " ", str(s).lower())
+    s = re.sub(r"(?<=[a-z.])0|0(?=[a-z.'])", "o", s)  # OCR reads O as 0 inside words: '0.T.T.0's' = O.T.T.O's
+    s = re.sub(r"\b(x\s*\d+|lvl\s*\d+|level\s*\d+|to\s*\d+|\d+)\b", " ", s)
+    s = re.sub(r"[^a-z ]", "", s.replace("-", " ").replace(".", ""))
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def name_match(a, b):
+    """Fuzzy: OCR turns Longshot into 'Lonashot&' and Storage into 'Storaae'."""
+    import difflib
+    a, b = (re.sub(r"^new ", "", norm_name(x)) for x in (a, b))  # the lab list tags fresh items 'New'
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    if len(a.split()) != len(b.split()):  # 'dark elixir storage' is not 'elixir storage'
+        return False
+    if [w[0] for w in a.split()] != [w[0] for w in b.split()]:  # OCR keeps first letters; 'hog rider' != 'hog glider'
+        return False
+    # short names need a closer match ('miner' is not 'mine'); longer ones survive OCR slips ('scabbershot')
+    return difflib.SequenceMatcher(None, a, b).ratio() >= (0.9 if min(len(a), len(b)) <= 6 else 0.8)
+
+
+def category_of(name):
+    exact = next((c for c, ns in UPGRADE_CATEGORIES.items() if norm_name(name) in ns), None)
+    if exact:
+        return exact
+    best = ("other", 0)
+    for cat, names in UPGRADE_CATEGORIES.items():
+        for n in names:
+            if name_match(name, n) and len(n) > best[1]:  # longest match: 'dark elixir storage' over 'elixir storage'
+                best = (cat, len(n))
+    return best[0]
+
+
+WIKI_DIR = os.path.join(BASE_DIR, "wiki")
+_WIKI = {}
+# Hammer Jam (50% off), Gold Pass (up to 20% off), both at once...: every price on one list has the same discount
+DISCOUNTS = (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3)
+
+
+def wiki_data():
+    """wiki/buildings.json (made by build_wiki_data.py): per building its levels with cost + required hall level."""
+    if "d" not in _WIKI:
+        try:
+            with open(os.path.join(WIKI_DIR, "buildings.json"), encoding="utf-8") as f:
+                _WIKI["d"] = json.load(f)
+        except (OSError, ValueError):
+            _WIKI["d"] = {}
+    return _WIKI["d"]
+
+
+def wiki_key(name, base):
+    """'home:cannon' for an OCR'd list name like 'Cannon x4' (fuzzy), or None."""
+    k = (norm_name(name), base)
+    if k not in _WIKI:
+        import difflib
+        hits = [key for key, v in wiki_data().items() if v["base"] == base and name_match(k[0], key.split(":", 1)[1])]
+        # several fuzzy hits ('Giaa Bomb': Giga Bomb / Giant Bomb): the closest one
+        _WIKI[k] = max(hits, key=lambda key: difflib.SequenceMatcher(None, k[0], key.split(":", 1)[1]).ratio(),
+                       default=None)
+    return _WIKI[k]
+
+
+def level_for_price(key, price, factor=1.0):
+    """Current level of a building whose next upgrade costs `price` (after `factor` discount), or None."""
+    e = wiki_data().get(key)
+    if not e or not price:
+        return None
+    full = price / factor
+    hits = [lv["level"] - 1 for lv in e["levels"]
+            if lv["cost"] and abs(lv["cost"] - full) <= max(lv["cost"] * 0.012, 600)]
+    return hits[0] if len(hits) == 1 else None  # two levels with that price: unknown (the scan then reads it)
+
+
+def infer_discount(rows, base):
+    """The discount that makes the most list prices line up with real wiki prices (smallest discount on a tie)."""
+    best = (0, 1.0)
+    for f in DISCOUNTS:
+        n = sum(1 for nm, p in rows if (k := wiki_key(nm, base)) and level_for_price(k, p, f) is not None)
+        if n > best[0]:
+            best = (n, f)
+    return best[1]
+
+
+def max_level(key, hall_level, hero_hall=None):
+    """Highest level of this building allowed at that Town Hall / Builder Hall (heroes: by Hero Hall level)."""
+    e = wiki_data().get(key)
+    if not e:
+        return None
+    hall = e["levels"][-1].get("hall", "town hall")
+    if hall == "hero hall":
+        if hero_hall is None and hall_level is not None:  # not scanned: the most the Hero Hall can be at this TH
+            hero_hall = max_level("home:hero hall", hall_level)
+        hall_level = hero_hall
+    if hall == "none" or hall_level is None:
+        return e["levels"][-1]["level"]
+    ok = [lv["level"] for lv in e["levels"] if lv["req"] <= hall_level]
+    return max(ok) if ok else 0
+
+
+NO_WIKI = ("blacksmith", "reinforcement camp")  # real buildings without wiki data: level read from the game
+
+
+def is_wall(name):
+    """'Wall', 'Wall x28', "': Wall x2" - never bought from the builder list (walls have their own routine)."""
+    return bool(re.fullmatch(r"walls?( x\w*)?", norm_name(name)))  # 'Wall xI50' = OCR'd 'Wall x150'
+
+
+def count_of(name):
+    m = re.search(r"x\s*(\d+)\s*$", name.strip(), re.I)
+    return int(m.group(1)) if m else 1
+
+
 def available_slots(frame):
     """(normal, goblin) free slots from an open builder/lab list's 'Available!' rows. The goblin builder /
     researcher (costs gems) has a green face next to its row; the normal builder/researcher doesn't."""
@@ -1118,6 +1271,8 @@ class Bot:
                         if stuck > (180 if loading else self.cfg["watchdog_attack_timeout"]):
                             self.recover_game(f"stuck on an unrecognised screen for {stuck:.0f}s")
                             unknown_since, backs = None, 0
+                        elif self.reload_if_disconnected(frame):
+                            unknown_since = None
                         elif self.find(frame, "wall_okay_button"):
                             self.log("Closing an Okay/Cancel dialog with Back (never confirms).")
                             self.adb.back()
@@ -1169,9 +1324,21 @@ class Bot:
         c = frame[int(8 * k):int(52 * k), int(140 * k):int(520 * k)]
         hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
         raw = ((hsv[:, :, 2] > 170) & (hsv[:, :, 1] < 60)).astype(np.uint8)
-        n, lab, st, _ = cv2.connectedComponentsWithStats(raw, 8)  # keep letter-height shapes, drop grass/UI specks
-        tall = max((st[i, 3] for i in range(1, n)), default=0)
-        keep = [i for i in range(1, n) if st[i, 3] >= 0.6 * tall and st[i, 3] >= 10 * k]
+        n, lab, st, _ = cv2.connectedComponentsWithStats(raw, 8)
+        # letters: 8-24px tall, not touching the crop edge, sitting on one baseline. Decorations behind the name
+        # (cakes, statues, snow) are taller / elsewhere - picking by 'tallest shape' dropped the lower-case letters.
+        cand = [i for i in range(1, n) if 8 * k <= st[i, 3] <= 24 * k and st[i, 2] <= 30 * k
+                and st[i, 1] > 0 and st[i, 1] + st[i, 3] < c.shape[0]]
+        base = np.median([st[i, 1] + st[i, 3] for i in cand]) if cand else 0
+        keep = [i for i in cand if abs(st[i, 1] + st[i, 3] - base) <= 3 * k]
+        if keep:  # one word: drop shapes far to the right of the name (a gap wider than two letters)
+            keep.sort(key=lambda i: st[i, 0])
+            word = [keep[0]]
+            for i in keep[1:]:
+                if st[i, 0] - (st[word[-1], 0] + st[word[-1], 2]) > 30 * k:
+                    break
+                word.append(i)
+            keep = word
         m = cv2.resize(np.isin(lab, keep).astype(np.uint8) * 255, None, fx=3, fy=3)
         try:
             words = pytesseract.image_to_string(cv2.copyMakeBorder(255 - m, 20, 20, 20, 20, cv2.BORDER_CONSTANT,
@@ -1221,6 +1388,8 @@ class Bot:
         for kind in ("builder", "lab"):
             if self.cfg[f"{kind}_upgrades_enabled"] and time.time() >= self._upgrade_backoff.get(kind, 0):
                 if self.free_slots(frame, kind) == 0:
+                    if self.maybe_rescan(kind):  # all busy: still refresh the planner's view now and then
+                        return
                     continue  # all busy: no need to open the list
                 self.upgrade_from_list(kind)
                 return  # screen changed; look again
@@ -1880,6 +2049,7 @@ class Bot:
                 if c["bb_builder_upgrades" if kind == "bb_builder" else "bb_lab_upgrades"]:
                     for _ in range(3):
                         if not self.free_slots(self.shot(), kind):
+                            self.maybe_rescan(kind)
                             break
                         n = self.stats["upgrades"]
                         self.upgrade_from_list(kind)
@@ -1926,6 +2096,20 @@ class Bot:
         self.take_boat("home")  # the boat view also shows the Elixir Cart: collect it (new defense rewards) first
         return True
 
+    def reload_if_disconnected(self, frame):
+        """'Anyone there? You have been disconnected due to inactivity' -> RELOAD GAME, then wait for it to load."""
+        hit = self.find(frame, "reload_game")
+        if not hit:
+            return False
+        self.log("Disconnected for inactivity - reloading the game.", "warn")
+        self.tap(hit, 2.0)
+        self._launched_at = time.time()  # loading screens next: don't count them as stuck
+        for _ in range(30):
+            if self.at_village(self.shot()):
+                break
+            self.sleep(2.0)
+        return True
+
     def storage_total(self, frame):
         """Gold + elixir + dark elixir, for checking an upgrade really took the resources."""
         regions = {"bank_dark_region": (1560, 225, 1830, 300), **self.cfg["ocr_regions"]}  # default: 1920x1080 bar
@@ -1938,6 +2122,8 @@ class Bot:
         cancels dialogs; a dropdown list is closed by tapping its icon."""
         for _ in range(6):
             f = self.shot()
+            if self.reload_if_disconnected(f):
+                continue
             if (self.find(f, "wall_okay_button") or self.find(f, "lab_picker_title")
                     or not self.at_village(f)):  # dialogs / game windows (they hide Attack)
                 self.adb.back()
@@ -1973,28 +2159,42 @@ class Bot:
             self.back_to_village(icon)
             return self.log(f"{KIND_NAMES[kind]}: " + ("only the goblin is free (costs gems) - not using it"
                                                    if goblin else "no free slot") + ". Checking again in 30 min.")
-        best, page, pages = None, 0, []
-        for page in range(8):  # read the whole list, page by page
-            frame = self.shot()
-            box = panel_box(frame)
-            if not box:
-                break
-            rows = list_rows(frame)
-            for nm, price, ok, xy in rows:
-                skip = re.search(r"\bwall\s*x", nm.lower()) or (  # walls: the wall routine; TH: optional no-rush
-                    self.cfg.get("skip_town_hall", True) and re.search(r"t[o0]wn\s*ha", nm.lower()))
-                if ok and not skip and (not best or price > best[1]):
-                    best = (nm, price, page)
-            sig = [(nm, p) for nm, p, _, _ in rows]
-            if pages and sig == pages[-1]:
-                break  # didn't move: bottom of the list
-            pages.append(sig)
-            self.scroll_panel(box)
+        seen = self.read_list()  # the whole list first: the discount and levels are worked out from all of it
+        plan, levels = self.plan_positions(kind, seen)
+        if plan:  # this account has a plan: stick to it - the next target in order, or wait (keep farming) for it
+            i = min(plan.values())
+            rows = [(nm, p, ok) for nm, p, ok in seen if plan.get((nm, p)) == i]
+            buy = [r for r in rows if r[2]]
+            if not buy:
+                it = self.plan_items(kind)[i]
+                self._upgrade_backoff[kind] = time.time() + 900
+                self.back_to_village(icon)
+                return self.log(f"{KIND_NAMES[kind]}: next in the plan is {wiki_data()[it['key']]['name']} -> "
+                                f"{it['to']} ({min(p for _, p, _ in rows):,}) - farming until it's affordable.")
+        best = None
+        for nm, price, ok in seen:
+            skip = is_wall(nm) or (  # walls: the wall routine; TH: optional no-rush
+                self.cfg.get("skip_town_hall", True) and re.search(r"t[o0]wn\s*ha", nm.lower()))
+            if skip or not ok or (plan and plan.get((nm, price)) != min(plan.values())):
+                continue
+            bb = next((i for i, r in enumerate(BB_DEFAULT_ROWS) if name_match(nm, r["name"])), 99) \
+                if kind == "bb_builder" else 99
+            rank = (plan.get((nm, price), 10 ** 6), bb, -price)  # 1) your plan 2) 6th builder first 3) priciest
+            if not best or rank < best[3]:
+                best = (nm, price, 0, rank)
         if not best:
             self._upgrade_backoff[kind] = time.time() + 1200
             self.back_to_village(icon)
             return self.log(f"{KIND_NAMES[kind]}: nothing affordable right now - checking again in 20 min.")
-        nm, price, _ = best
+        nm, price = best[:2]
+        r = best[3][1:]
+        lv = levels.get((nm, price))
+        self.log(f"{KIND_NAMES[kind]}: choosing '{nm}'" + (f" (level {lv} -> {lv + 1})" if lv is not None else "")
+                 + f" for {price:,} - "
+                 + (f"#{best[3][0] + 1} in your upgrade plan." if best[3][0] < 10 ** 6
+                    else "Builder Base: Builder Hall / 6th builder (O.T.T.O's Outpost) first." if r[0] < 99
+                    else "the most expensive one you can afford."))
+        self._started = (kind, nm, price, lv)
         self.tap(icon, 1.0)  # close + reopen = back at the top, then page down until it's on screen
         self.tap(icon, 1.3)  # (scrolling never lands in the same place twice, so search, don't count)
         match, prev = [], None
@@ -2055,10 +2255,242 @@ class Bot:
             self.log(f"{'Research' if kind.endswith('lab') else 'Upgrade'} started"
                      f"{' (Builder Base)' if kind.startswith('bb_') else ''}: {nm} for {price:,}.", "ok")
             self._upgrade_backoff[kind] = 0  # another builder may be free - check next time home
+            self.plan_progress(*self._started)
         else:
             self._upgrade_backoff[kind] = time.time() + 1800
             self.log(f"{KIND_NAMES[kind]}: '{nm}' didn't start (all {'builders' if kind == 'builder' else 'lab slots'} "
                      f"busy?) - checking again in 30 min.")
+
+    # --- upgrade planner: per-account scans + targets ---
+    def read_list(self):
+        """Every row of the open builder / lab list, page by page: [(name, price, affordable)]."""
+        seen, pages = {}, []
+        for _ in range(8):
+            frame = self.shot()
+            box = panel_box(frame)
+            if not box:
+                break
+            rows = list_rows(frame)
+            for nm, price, ok, xy in rows:
+                seen.setdefault((nm, price), ok)
+            sig = [(nm, p) for nm, p, _, _ in rows]
+            if pages and sig == pages[-1]:
+                break  # didn't move: bottom of the list
+            pages.append(sig)
+            self.scroll_panel(box)
+        return [(nm, p, ok) for (nm, p), ok in seen.items()]
+
+    def plan_items(self, kind):
+        if kind.endswith("lab"):
+            return []
+        base = "builder" if kind.startswith("bb_") else "home"
+        return ((self.cfg.get("plans") or {}).get(self._last_name or "?") or {}).get(base) or []
+
+    def plan_positions(self, kind, seen):
+        """Record this account's scan, then ({(name, price): position in its plan}, {(name, price): level})."""
+        if kind.endswith("lab"):
+            return {}, {}
+        base = "builder" if kind.startswith("bb_") else "home"
+        scan = self.record_scan(base, seen)
+        levels = {(r["name"], r["price"]): r["level"] for r in scan["items"]}
+        pos = {}
+        for i, it in enumerate(self.plan_items(kind)):
+            for r in scan["items"]:
+                if r["key"] == it["key"] and (r["level"] is None or r["level"] < it["to"]):
+                    pos.setdefault((r["name"], r["price"]), i)
+        return pos, levels
+
+    def record_scan(self, base, seen):
+        """What this account can still upgrade, with levels worked out from the prices (discounts included)."""
+        f = infer_discount([(n, p) for n, p, _ in seen], base)
+        items, dup = [], {}
+        for nm, p, ok in seen:
+            k = wiki_key(nm, base)
+            if is_wall(nm) or "supercharge" in nm.lower() or (k is None and norm_name(nm) not in NO_WIKI):
+                continue  # walls, Supercharges and event items (Cake-A-Pult...) aren't planned
+            r = {"name": nm, "price": p, "ok": ok, "key": k, "count": count_of(nm),
+                 "level": level_for_price(k, p, f) if k else None}
+            same = dup.get((k or norm_name(nm), p))  # the same row read twice across pages ('Storaqe' / 'SGoraqe')
+            if same:
+                same["count"] = max(same["count"], r["count"])
+                continue
+            dup[(k or norm_name(nm), p)] = r
+            items.append(r)
+        hall = next((r["level"] for r in items if r["key"] in ("home:town hall", "builder:builder hall")
+                     and r["level"] is not None), None)
+        if hall is None:  # no hall row (maxed / upgrading): the list only offers what this hall allows
+            reqs = [wiki_data()[r["key"]]["levels"][r["level"]]["req"] for r in items
+                    if r["key"] and r["level"] is not None and r["level"] < len(wiki_data()[r["key"]]["levels"])
+                    and wiki_data()[r["key"]]["levels"][-1].get("hall") in ("town hall", "builder hall")
+                    and wiki_data()[r["key"]]["levels"][0]["level"] == 1]
+            hall = max(reqs) if reqs else None
+        hero = next((r["level"] for r in items if r["key"] == "home:hero hall" and r["level"] is not None), None)
+        acc = self._last_name
+        if not acc or acc == "?":  # never file a scan under an unknown account - it'd mix accounts up
+            self.log("Upgrade planner: couldn't read the account name - scan not saved.", "warn")
+            return {"items": items, "discount": f, "hall": hall}
+        scans = self.cfg.setdefault("scans", {}).setdefault(acc, {})
+        old = scans.get(base) or {}
+        has_row = any(r["key"] in ("home:town hall", "builder:builder hall") for r in items)
+        if not has_row:  # estimated: a rushed base's pending upgrades need less than its real hall - and a hall
+            hall = max([h for h in (hall, old.get("hall")) if h] or [None])  # never goes down; manual stays
+        hero = hero if hero is not None else old.get("hero_hall")
+        scan = {"time": time.strftime("%Y-%m-%d %H:%M"), "discount": f, "items": items, "hall": hall,
+                "hero_hall": hero}
+        scans[base] = scan
+        if f < 1:
+            self.log(f"Prices are {round((1 - f) * 100)}% off right now (Hammer Jam / Gold Pass) - levels "
+                     "worked out with that.")
+        self.prune_plan(acc, base)
+        save_config(self.cfg)
+        self.emit("scan", acc)
+        return scan
+
+    def prune_plan(self, acc, base):
+        """Drop plan targets this account has reached (every copy seen on the list is at or past the target)."""
+        plans = (self.cfg.get("plans") or {}).get(acc) or {}
+        items = ((self.cfg.get("scans") or {}).get(acc) or {}).get(base, {}).get("items", [])
+        keep = []
+        for it in plans.get(base) or []:
+            mine = [r for r in items if r["key"] == it["key"]]
+            if mine and all(r["level"] is not None and r["level"] >= it["to"] for r in mine):
+                self.log(f"Upgrade plan: {wiki_data()[it['key']]['name']} -> level {it['to']} done "
+                         f"({acc}).", "ok")
+                continue
+            keep.append(it)
+        if plans.get(base) is not None and len(keep) != len(plans[base]):
+            plans[base] = keep
+
+    def plan_progress(self, kind, nm, price, lv):
+        """An upgrade just started: one copy of that row moves up a level; targets reached leave the plan."""
+        if kind.endswith("lab"):
+            return
+        base = "builder" if kind.startswith("bb_") else "home"
+        acc = self._last_name or "?"
+        scan = ((self.cfg.get("scans") or {}).get(acc) or {}).get(base)
+        if not scan:
+            return
+        for r in scan["items"]:
+            if r["name"] == nm and r["price"] == price:
+                r["count"] -= 1
+                if lv is not None:
+                    scan["items"].append({"name": nm + " (upgrading)", "price": 0, "ok": False, "key": r["key"],
+                                          "count": 1, "level": lv + 1, "upgrading": True})
+                break
+        scan["items"] = [r for r in scan["items"] if r["count"] > 0]
+        self.prune_plan(acc, base)
+        save_config(self.cfg)
+        self.emit("scan", acc)
+
+    def level_label(self, frame):
+        """'Cannon (Level 21)' shown under a selected building -> 21, else None."""
+        k = frame.shape[1] / 1920
+        c = frame[int(640 * k):int(790 * k), int(360 * k):int(1560 * k)]
+        hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
+        m = cv2.resize(((hsv[:, :, 2] > 200) & (hsv[:, :, 1] < 80)).astype(np.uint8) * 255, None, fx=1.5, fy=1.5)
+        try:
+            t = pytesseract.image_to_string(cv2.copyMakeBorder(255 - m, 20, 20, 20, 20, cv2.BORDER_CONSTANT,
+                                                               value=255), config="--psm 6", timeout=6)
+        except Exception:
+            return None
+        hit = re.search(r"(?i)l[e3]v[e3]l\s*([0-9]{1,3})", t)
+        return int(hit.group(1)) if hit else None
+
+    def resolve_levels(self, kind, base, limit=10):
+        """Rows the price didn't settle (duplicate prices, OCR slips, no wiki data): tap each one in the list and
+        read 'Name (Level N)' under the building. Saves the scan."""
+        acc = self._last_name
+        scan = ((self.cfg.get("scans") or {}).get(acc) or {}).get(base)
+        todo = [r for r in (scan or {}).get("items", []) if r.get("level") is None and not r.get("upgrading")]
+        if not todo:
+            return
+        icon = top_bar(self.shot(), kind)[0]
+        for r in todo[:limit]:
+            self.back_to_village(icon)
+            self.tap(icon, 1.3)
+            hit = None
+            for _ in range(8):  # page down until the row shows
+                f = self.shot()
+                box = panel_box(f)
+                if not box:
+                    break
+                hit = next((xy for nm, p, ok, xy in list_rows(f) if p == r["price"] and name_match(nm, r["name"])),
+                           None)
+                if hit:
+                    break
+                self.scroll_panel(box)
+            if not hit:
+                continue
+            self.tap(hit, 1.4)
+            if panel_box(self.shot()):
+                self.tap(icon, 1.0)
+            lv = None
+            for _ in range(3):
+                lv = self.level_label(self.shot())
+                if lv is not None:
+                    break
+                self.sleep(0.6)
+            if lv is not None:
+                r["level"] = lv
+                self.log(f"Upgrade planner: {r['name']} is level {lv} (read from the game).")
+        self.back_to_village(icon)
+        self.prune_plan(acc, base)
+        save_config(self.cfg)
+        self.emit("scan", acc)
+
+    def maybe_rescan(self, kind, hours=6):
+        """Builders all busy: read the list anyway if this account's planner scan is missing or old. True if it did."""
+        if kind.endswith("lab") or not self._last_name or self._last_name == "?":
+            return False
+        base = "builder" if kind.startswith("bb_") else "home"
+        sd = ((self.cfg.get("scans") or {}).get(self._last_name) or {}).get(base) or {}
+        try:
+            age = time.time() - time.mktime(time.strptime(sd["time"], "%Y-%m-%d %H:%M"))
+        except (KeyError, ValueError):
+            age = 10 ** 9
+        if age < hours * 3600:
+            return False
+        icon = top_bar(self.shot(), kind)[0]
+        self.tap(icon, 1.3)
+        self.sleep(0.5)
+        seen = self.read_list()
+        self.tap(icon, 1.0)
+        self.back_to_village(icon)
+        if seen:
+            self.record_scan(base, seen)
+            self.resolve_levels(kind, base)
+            self.log(f"Upgrade planner: refreshed {self._last_name}'s {'Builder Base' if base == 'builder' else 'home'}"
+                     f" scan ({len(seen)} upgrades left).")
+        return True
+
+    def scan_now(self):
+        """Planner's 'Scan': open this account's builder list (home or Builder Base, whichever is showing), read it."""
+        self.back_to_village()
+        f = self.shot()
+        if not self.at_village(f):
+            raise RuntimeError("the game isn't on the home village or Builder Base")
+        kind = "bb_builder" if self.find(f, "bb_attack_button") else "builder"
+        self._last_name = None
+        for _ in range(4):  # a popup / the XP bar animating can hide the name for a moment
+            if self.account_name(f) != "?":
+                break
+            self.sleep(1.0)
+            f = self.shot()
+        if not self._last_name:
+            raise RuntimeError("couldn't read the account name at the top-left - close any popup and try again")
+        icon = top_bar(f, kind)[0]
+        if not panel_box(f):
+            self.tap(icon, 1.3)
+        self.sleep(0.5)
+        seen = self.read_list()
+        self.tap(icon, 1.0)
+        self.back_to_village(icon)
+        if not seen:
+            raise RuntimeError("the builder list didn't open")
+        base = "builder" if kind.startswith("bb_") else "home"
+        self.record_scan(base, seen)
+        self.resolve_levels(kind, base)
+        return self._last_name, kind
 
     def resource_confirm(self, kind):
         """(button, price shown on it) of the upgrade window's green resource button, else (None, None).
@@ -2157,7 +2589,14 @@ class Bot:
                 self._bank_backoff.clear()
                 self._busy_until.clear()
                 self.bump("switches")
-                self._last_name = name  # picked from the Supercell ID list: no need to read it
+                # plans / scans / Star Bonus follow the in-game name (top-left) - the Supercell ID list's name can
+                # differ; it's only the fallback when the name can't be read yet
+                self._last_name = None
+                for _ in range(3):
+                    if self.account_name(self.shot()) != "?":
+                        break
+                    self.sleep(1.0)
+                self._last_name = self._last_name or name
                 self.emit("state", f"Home village ({name})")
                 return True
             if self.find(f, "wall_okay_button") or time.time() > end - 60 + 6 * (backs + 1):
@@ -2928,6 +3367,364 @@ class DropLinePicker(tk.Toplevel):
         self.destroy()
 
 
+PRETTY = {"ottos outpost": "O.T.T.O's Outpost", "x bow": "X-Bow", "builders hut": "Builder's Hut",
+          "multi archer tower": "Multi-Archer Tower", "multi gear tower": "Multi-Gear Tower"}
+pretty = lambda n: PRETTY.get(n, n.title())
+PLAN_CATS = ("All", "Heroes", "Army", "Defences", "Guardians", "Traps", "Resources", "Other")
+
+
+class PlannerWindow(tk.Toplevel):
+    """Per-account upgrade planner: every upgrade the account has left (from its last scan) as a card with its picture,
+    current level and the max for its Town Hall; click a level to queue it. The queue is this account's order."""
+
+    def __init__(self, app, account=None):
+        super().__init__(app)
+        self.app, self.cfg = app, app.cfg
+        self.title("Upgrade planner")
+        self.configure(bg=BG)
+        self.geometry(f"{S(1240)}x{S(780)}")
+        self._img = {}
+        top = ttk.Frame(self, padding=S(14, 12, 14, 6))
+        top.pack(fill="x")
+        ttk.Label(top, text="Account", style="CardTitle.TLabel").pack(side="left")
+        self.acc = ttk.Combobox(top, state="readonly", width=16)
+        self.acc.pack(side="left", padx=S(6, 14))
+        self.acc.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+        self.base = tk.StringVar(value="home")
+        for v, t in (("home", "Home village"), ("builder", "Builder Base")):
+            ttk.Radiobutton(top, text=t, value=v, variable=self.base, command=self.refresh).pack(side="left",
+                                                                                                padx=S(0, 8))
+        ttk.Label(top, text="Hall level", style="CardTitle.TLabel").pack(side="left", padx=S(10, 4))
+        self.hall = ttk.Spinbox(top, from_=1, to=18, width=4, command=self.set_hall)
+        self.hall.pack(side="left")
+        self.hall.bind("<Return>", lambda e: self.set_hall())
+        ttk.Button(top, text="🔍  Scan the account in the game now", style="Accent.TButton",
+                   command=self.scan).pack(side="right")
+        self.info = ttk.Label(self, style="Sub.TLabel", padding=S(14, 0, 14, 6))
+        self.info.pack(fill="x")
+
+        body = ttk.Frame(self, padding=S(14, 0, 14, 14))
+        body.pack(fill="both", expand=True)
+        # left: this account's queue
+        q = ttk.Frame(body, style="Card.TFrame", padding=S(10))
+        q.pack(side="left", fill="y")
+        self.qtitle = ttk.Label(q, style="CardTitle.TLabel")
+        self.qtitle.pack(anchor="w")
+        ttk.Label(q, text="Top = upgraded first. Done targets drop off\nby themselves.", style="Sub.TLabel").pack(
+            anchor="w", pady=S(2, 6))
+        self.qbox = self._scroller(q, S(330))
+        ttk.Button(q, text="Clear this account's plan", command=self.clear).pack(anchor="w", pady=S(8, 0))
+        # right: cards
+        r = ttk.Frame(body)
+        r.pack(side="left", fill="both", expand=True, padx=S(12, 0))
+        bar = ttk.Frame(r)
+        bar.pack(fill="x", pady=S(0, 6))
+        self.cat = tk.StringVar(value="All")
+        for c in PLAN_CATS:
+            ttk.Radiobutton(bar, text=c, value=c, variable=self.cat, command=self.draw_cards).pack(
+                side="left", padx=S(0, 6))
+        self.search = ttk.Entry(bar, width=16)
+        self.search.pack(side="right")
+        self.search.bind("<KeyRelease>", lambda e: self.draw_cards())
+        ttk.Label(bar, text="🔎", style="Sub.TLabel").pack(side="right")
+        self.cards = self._scroller(r, None)
+        self.transient(app)
+        self.accounts()
+        self.refresh()
+
+    # --- helpers ---
+    def _scroller(self, parent, width):
+        wrap = ttk.Frame(parent)
+        wrap.pack(fill="both", expand=True)
+        cv = tk.Canvas(wrap, bg=CARD if width else BG, highlightthickness=0, **({"width": width} if width else {}))
+        sb = ttk.Scrollbar(wrap, command=cv.yview)
+        inner = ttk.Frame(cv, style="Card.TFrame" if width else "TFrame")
+        inner.bind("<Configure>", lambda e: cv.configure(scrollregion=cv.bbox("all")))
+        win = cv.create_window(0, 0, anchor="nw", window=inner)
+        cv.bind("<Configure>", lambda e: cv.itemconfigure(win, width=e.width))
+        cv.configure(yscrollcommand=sb.set)
+        cv.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        wheel = lambda e: cv.yview_scroll(int(-e.delta / 120), "units")
+        cv.bind("<Enter>", lambda e: cv.bind_all("<MouseWheel>", wheel))
+        cv.bind("<Leave>", lambda e: cv.unbind_all("<MouseWheel>"))
+        inner.canvas = cv
+        return inner
+
+    def icon(self, key, size):
+        if (key, size) not in self._img:
+            e = wiki_data().get(key) or {}
+            try:
+                im = Image.open(os.path.join(WIKI_DIR, e["icon"])).convert("RGBA")
+                im.thumbnail((size, size))
+                self._img[(key, size)] = ImageTk.PhotoImage(im)
+            except Exception:
+                self._img[(key, size)] = None
+        return self._img[(key, size)]
+
+    def accounts(self):
+        names = sorted(set((self.cfg.get("scans") or {})) | set((self.cfg.get("plans") or {})) - {"?"})
+        cur = getattr(getattr(self.app, "bot", None), "_last_name", None)
+        self.acc["values"] = names
+        pick = cur if cur in names else self.acc.get() if self.acc.get() in names else (names[0] if names else "")
+        self.acc.set(pick)
+
+    def scan_data(self):
+        return ((self.cfg.get("scans") or {}).get(self.acc.get()) or {}).get(self.base.get()) or {}
+
+    def plan(self):
+        p = self.cfg.setdefault("plans", {}).setdefault(self.acc.get(), {})
+        return p.setdefault(self.base.get(), [])
+
+    def hall_level(self):
+        sd = self.scan_data()
+        if sd.get("hall"):
+            return sd["hall"]
+        # not on the list (maxed, or upgrading): at least what the list's next levels need
+        reqs = [wiki_data()[r["key"]]["levels"][r["level"]]["req"] for r in sd.get("items", [])
+                if r.get("key") and r.get("level") is not None and not r.get("upgrading")
+                and r["level"] < len(wiki_data()[r["key"]]["levels"])
+                and wiki_data()[r["key"]]["levels"][-1].get("hall") in ("town hall", "builder hall")]
+        return max(reqs) if reqs else None
+
+    def set_hall(self):
+        try:
+            v = int(self.hall.get())
+        except ValueError:
+            return
+        sd = self.cfg.setdefault("scans", {}).setdefault(self.acc.get(), {}).setdefault(self.base.get(), {})
+        sd["hall"] = v
+        save_config(self.cfg)
+        self.refresh()
+
+    def groups(self):
+        """{key: [(level, count), ...]} of what's left, from the scan (several levels per building possible)."""
+        g = {}
+        for r in self.scan_data().get("items", []):
+            if r.get("key"):
+                g.setdefault(r["key"], []).append((r.get("level"), r.get("count", 1), r.get("upgrading", False)))
+        return g
+
+    # --- drawing ---
+    def refresh(self):
+        if not self.winfo_exists():
+            return
+        self.accounts()
+        sd, acc = self.scan_data(), self.acc.get()
+        hall = self.hall_level()
+        self.hall.set(hall or "")
+        what = "Town Hall" if self.base.get() == "home" else "Builder Hall"
+        if not acc:
+            self.info.config(text="No account scanned yet - open the game on an account and click 'Scan the account"
+                                  " in the game now' (farming also scans each account automatically).")
+        elif not sd:
+            self.info.config(text=f"{acc}: no {'Builder Base' if self.base.get() == 'builder' else 'home'} scan yet"
+                                  " - click Scan while that village is showing in the game.")
+        else:
+            d = sd.get("discount", 1)
+            self.info.config(text=f"{acc} · {what} {hall or '?'} · scanned {sd.get('time', '?')}"
+                                  + (f" · prices were {round((1 - d) * 100)}% off (Hammer Jam / Gold Pass) - "
+                                     "levels worked out with that" if d < 1 else ""))
+        self.qtitle.config(text=f"Upgrade order - {acc or 'no account'}")
+        self.build_cards()
+        self.draw_queue()
+
+    # plain tk widgets inside the lists: themed ttk ones made each redraw take seconds
+    def _lbl(self, parent, text="", bold=False, muted=False, size=10, **kw):
+        return tk.Label(parent, text=text, bg=kw.pop("bg", CARD), fg=MUTED if muted else TEXT, anchor="w",
+                        font=("Segoe UI", size, "bold" if bold else "normal"), justify="left", **kw)
+
+    def _chip(self, parent, text, cmd):
+        c = tk.Label(parent, text=text, bg="#3a3a3a", fg=TEXT, font=("Segoe UI", 9, "bold"), padx=S(7), pady=S(3),
+                     cursor="hand2")
+        c.bind("<Button-1>", lambda e: cmd())
+        return c
+
+    def draw_queue(self):
+        for w in self.qbox.winfo_children():
+            w.destroy()
+        plan, g = self.plan(), self.groups()
+        if not plan:
+            self._lbl(self.qbox, "Nothing queued yet.\nClick a level on a building →", muted=True).pack(
+                anchor="w", pady=S(6))
+        for i, it in enumerate(plan):
+            e = wiki_data().get(it["key"], {})
+            left = sum(c for lv, c, up in g.get(it["key"], []) if lv is not None and lv < it["to"] and not up)
+            row = tk.Frame(self.qbox, bg=CARD, pady=S(3))
+            row.pack(fill="x")
+            self._lbl(row, f"{i + 1}.", muted=True, width=3).pack(side="left")
+            ic = self.icon(it["key"], S(34))
+            if ic:
+                tk.Label(row, image=ic, bg=CARD).pack(side="left")
+            txt = tk.Frame(row, bg=CARD)
+            txt.pack(side="left", fill="x", expand=True, padx=S(6, 0))
+            self._lbl(txt, f"{e.get('name', it['key'])} → {it['to']}", bold=True).pack(anchor="w")
+            self._lbl(txt, f"{left} to upgrade" if left else "✓ reached (or upgrading)", muted=True,
+                      size=9).pack(anchor="w")
+            for sym, cmd in (("✕", lambda i=i: self.remove(i)), ("▼", lambda i=i: self.move(i, 1)),
+                             ("▲", lambda i=i: self.move(i, -1))):
+                self._chip(row, sym, cmd).pack(side="right", padx=S(1))
+
+    def build_cards(self):
+        """One card per building this account can still upgrade - built once per account / village / scan."""
+        g, hall = self.groups(), self.hall_level()
+        hero_hall = self.scan_data().get("hero_hall")
+        sig = (self.acc.get(), self.base.get(), self.scan_data().get("time"), hall, hero_hall,
+               tuple(sorted((k, tuple(v)) for k, v in g.items())))
+        if sig == getattr(self, "_sig", None):
+            return self.draw_cards()
+        self._sig = sig
+        for w in self.cards.winfo_children():
+            w.destroy()
+        self._cards = {}
+        self._empty = self._lbl(self.cards, "Nothing to show - scan the account first (or change the filter).",
+                                muted=True, bg=BG)
+        for c in range(3):
+            self.cards.columnconfigure(c, weight=1, uniform="card")
+        for k in g:
+            e = wiki_data()[k]
+            levels = sorted(((lv, c, up) for lv, c, up in g[k] if lv is not None), key=lambda x: x[0])
+            cur = min((lv for lv, c, up in levels), default=None)
+            mx = max_level(k, hall, hero_hall)
+            card = tk.Frame(self.cards, bg=CARD, padx=S(10), pady=S(10))
+            head = tk.Frame(card, bg=CARD)
+            head.pack(fill="x")
+            ic = self.icon(k, S(56))
+            if ic:
+                tk.Label(head, image=ic, bg=CARD).pack(side="left")
+            t = tk.Frame(head, bg=CARD)
+            t.pack(side="left", fill="x", expand=True, padx=S(8, 0))
+            self._lbl(t, e["name"], bold=True, size=11).pack(anchor="w")
+            have = ", ".join(("not built yet" if lv == 0 else f"lvl {lv}") + (f" ×{c}" if c > 1 else "")
+                             + (" ⏳" if up else "") for lv, c, up in levels) or "level unknown"
+            self._lbl(t, have, muted=True, size=9, wraplength=S(230)).pack(anchor="w")
+            if mx:
+                self._lbl(t, f"max {mx} at this hall", muted=True, size=9).pack(anchor="w")
+            info = {"frame": card, "chips": [], "x": None, "name": e["name"].lower(),
+                    "cat": category_of(k.split(":", 1)[1])}
+            self._cards[k] = info
+            if cur is None or mx is None or cur >= mx:
+                self._lbl(card, "✓ maxed for this hall" if cur is not None and mx and cur >= mx else
+                          "(level couldn't be read)", muted=True, size=9).pack(anchor="w", pady=S(6, 0))
+                continue
+            chips = tk.Frame(card, bg=CARD)
+            chips.pack(fill="x", pady=S(8, 0))
+            self._lbl(chips, "Up to:", muted=True, size=9).pack(side="left", padx=S(0, 4))
+            targets = list(range(cur + 1, mx + 1))
+            if len(targets) > 6:  # heroes have dozens of levels: next few + max, plus a picker for any level
+                targets = targets[:4] + [mx]
+                pick = tk.Frame(card, bg=CARD)
+                pick.pack(fill="x", pady=S(6, 0))
+                self._lbl(pick, "or level", muted=True, size=9).pack(side="left")
+                sp = tk.Spinbox(pick, from_=cur + 1, to=mx, width=5, bg="#3a3a3a", fg=TEXT, buttonbackground=CARD,
+                                relief="flat", insertbackground=TEXT)
+                sp.pack(side="left", padx=S(4))
+                self._chip(pick, "Set", lambda k=k, sp=sp, lo=cur + 1, hi=mx: self.add(
+                    k, min(hi, max(lo, int(sp.get())))) if sp.get().isdigit() else None).pack(side="left")
+            for lv in targets:
+                ch = self._chip(chips, ("MAX " if lv == mx else "") + str(lv), lambda k=k, lv=lv: self.add(k, lv))
+                ch.pack(side="left", padx=S(2, 0))
+                info["chips"].append((lv, ch))
+            info["x"] = self._chip(chips, "✕", lambda k=k: self.remove_key(k))
+        self.draw_cards()
+
+    def draw_cards(self):
+        """Filter / search: just show or hide the cards already built."""
+        cards = getattr(self, "_cards", {})
+        for c in cards.values():
+            c["frame"].grid_remove()
+        self._empty.grid_remove()
+        cat, q = self.cat.get().lower(), self.search.get().strip().lower()
+        order = [c.lower() for c in PLAN_CATS[1:]]
+        keys = sorted((k for k, c in cards.items() if (cat == "all" or c["cat"] == cat) and (not q or q in c["name"])),
+                      key=lambda k: (order.index(cards[k]["cat"]) if cards[k]["cat"] in order else 99,
+                                     cards[k]["name"]))
+        for n, k in enumerate(keys):
+            cards[k]["frame"].grid(row=n // 3, column=n % 3, sticky="nsew", padx=S(4), pady=S(4))
+        if not keys:
+            self._empty.grid(row=0, column=0, columnspan=3, sticky="w", pady=S(10))
+        self.update_chips()
+        self.cards.canvas.yview_moveto(0)
+
+    def update_chips(self, keys=None):
+        """Highlight the chosen target levels (only the cards that changed)."""
+        want = {it["key"]: it["to"] for it in self.plan()}
+        cards = getattr(self, "_cards", {})
+        for k in (keys if keys is not None else cards):
+            c = cards.get(k)
+            if not c:
+                continue
+            for lv, ch in c["chips"]:
+                on = want.get(k, 0) >= lv
+                ch.config(bg=BLUE if on else "#3a3a3a", fg="#0b1a2b" if on else TEXT)
+            if c["x"] is not None:
+                if k in want:
+                    c["x"].pack(side="right")
+                else:
+                    c["x"].pack_forget()
+
+    # --- editing (saved straight away; the bot reads it on its next builder check) ---
+    def add(self, key, to):
+        plan = self.plan()
+        it = next((x for x in plan if x["key"] == key), None)
+        if it:
+            it["to"] = to
+        else:
+            plan.append({"key": key, "to": to})
+        self.save([key])
+
+    def remove(self, i):
+        plan = self.plan()
+        if 0 <= i < len(plan):
+            key = plan.pop(i)["key"]
+            self.save([key])
+
+    def remove_key(self, key):
+        plan = self.plan()
+        plan[:] = [x for x in plan if x["key"] != key]
+        self.save([key])
+
+    def move(self, i, d):
+        plan = self.plan()
+        if 0 <= i + d < len(plan):
+            plan[i], plan[i + d] = plan[i + d], plan[i]
+            self.save([])
+
+    def clear(self):
+        if self.plan() and messagebox.askyesno("Clear", f"Remove every target for {self.acc.get()} "
+                                                        f"({'Builder Base' if self.base.get() == 'builder' else 'home'})?",
+                                               parent=self):
+            self.plan().clear()
+            self.save(None)
+
+    def save(self, keys=None):
+        save_config(self.cfg)
+        self.draw_queue()
+        self.update_chips(keys)
+
+    def scan(self):
+        if self.app.thread:
+            return messagebox.showinfo("Scan", "Farming is running - the bot scans each account by itself whenever "
+                                               "it checks the builders. Stop farming to scan right now.", parent=self)
+        self.info.config(text="Scanning - reading the builder list in the game…")
+
+        def work():
+            try:
+                acc, kind = Bot(self.cfg, self.app.adb, self.app.emit).scan_now()
+            except Exception as e:
+                msg = f"Scan failed: {e}"
+                return self.app.ui(lambda: self.info.config(text=msg))
+
+            def done():
+                if self.winfo_exists():
+                    self.accounts()
+                    self.acc.set(acc)
+                    self.base.set("builder" if kind.startswith("bb_") else "home")
+                    self.refresh()
+            self.app.ui(done)
+        self.app.bg(work)
+
+
 class CaptureWindow(tk.Toplevel):
     """Shows a screenshot; drag a box. Calls on_done(crop, center, bbox) in full-res coords."""
 
@@ -3104,6 +3901,10 @@ class App(tk.Tk):
                         cursor="hand2")
         ver.pack(anchor="w")
         ver.bind("<Button-1>", lambda e: self.pick_version())
+        pln = ttk.Label(left, text="🏗  Upgrade planner (per account)", style="Sub.TLabel", foreground=BLUE,
+                        cursor="hand2")
+        pln.pack(anchor="w")
+        pln.bind("<Button-1>", lambda e: self.open_planner())
 
         right = ttk.Frame(head)
         right.pack(side="right")
@@ -3387,6 +4188,10 @@ class App(tk.Tk):
                         self.res_labels[k].config(text="?" if v is None else f"{v:,}")
                 elif kind == "call":
                     data()
+                elif kind == "scan":
+                    p = getattr(self, "planner", None)
+                    if p is not None and p.winfo_exists():
+                        p.refresh()
         except queue.Empty:
             pass
         if frame is not None:
@@ -3584,6 +4389,12 @@ class App(tk.Tk):
             self.log(f"Updated {n} files to version {self._update['version']} - restarting.", "ok")
             self.ui(lambda: self.after(800, self._restart_now))
         self.bg(work)
+
+    def open_planner(self):
+        p = getattr(self, "planner", None)
+        if p is not None and p.winfo_exists():
+            return p.lift()
+        self.planner = PlannerWindow(self)
 
     def pick_version(self):
         """List the published versions and install the chosen one (older or newer). Settings are kept."""
@@ -4015,6 +4826,19 @@ def selftest():
         img = decode_raw(struct.pack("<III", 4, 3, 1) + extra + px)
         assert img.shape == (3, 4, 3) and tuple(img[0, 0]) == (2, 1, 0), "raw screencap decode"
     assert decode_raw(b"\x89PNG not raw at all") is None
+    assert panel_box(np.zeros((1080, 1920, 3), np.uint8)) is None, "no list open"
+    # names as OCR reads them, and look-alikes that must not match
+    assert name_match("Lonashot&", "Longshot") and name_match("New Hog Glider", "Hog Glider")
+    assert name_match("0.T.T.0's Ouboost", "O.T.T.O's Outpost") and name_match("Scabbershot x2", "Scattershot")
+    assert not name_match("Ricochet Cannon", "Cannon") and not name_match("Dark Elixir Storage", "Elixir Storage")
+    assert not name_match("Hog Rider", "Hog Glider") and not name_match("Miner", "Mine")
+    assert all(map(is_wall, ("Wall", "Wall x28", "': Wall x2", "Wall xI50"))) and not is_wall("Wall Wrecker")
+    if wiki_data():  # price -> level, with the discount worked out from the whole list (Hammer Jam / Gold Pass)
+        rows = [("Cannon x4", 3000000), ("Mortar x3", 21000000), ("Archer Queen", 380000), ("Laboratoru", 13000000)]
+        for f in (1, 0.8, 0.5):
+            got = [(n, int(p * f)) for n, p in rows]
+            assert infer_discount(got, "home") == f, f
+            assert level_for_price(wiki_key("Cannon x4", "home"), 3000000 * f, f) == 20
 
     frame = np.random.default_rng(0).integers(0, 255, (1080, 1920, 3), dtype=np.uint8)
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
@@ -4070,6 +4894,9 @@ def make_package():
         for f in sorted(os.listdir(TEMPLATE_DIR)):
             if f.endswith(".png") and not f.startswith("old_"):
                 z.write(os.path.join(TEMPLATE_DIR, f), f"LootFarmer/templates/{f}")
+        for f in published_files():
+            if f.startswith("wiki/"):
+                z.write(os.path.join(BASE_DIR, f), f"LootFarmer/{f}")
         z.writestr("LootFarmer/config.json", json.dumps(shared, indent=2))
     print(f"Created {out}")
 
@@ -4081,6 +4908,11 @@ def published_files():
     """Everything an update carries: the code, setup files and templates. Never config.json / logs / tools."""
     files = [f for f in PUBLISHED if os.path.exists(os.path.join(BASE_DIR, f))]
     files += sorted(f"templates/{f}" for f in os.listdir(TEMPLATE_DIR) if f.endswith(".png"))
+    if os.path.isdir(WIKI_DIR):  # the upgrade planner's wiki data + building pictures
+        files += ["wiki/buildings.json"] * os.path.exists(os.path.join(WIKI_DIR, "buildings.json"))
+        icons = os.path.join(WIKI_DIR, "icons")
+        files += sorted(f"wiki/icons/{f}" for f in (os.listdir(icons) if os.path.isdir(icons) else [])
+                        if f.endswith(".png"))
     return files
 
 
@@ -4189,6 +5021,9 @@ def make_update():
         for f in sorted(os.listdir(TEMPLATE_DIR)):
             if f.endswith(".png") and not f.startswith("old_"):
                 z.write(os.path.join(TEMPLATE_DIR, f), f"LootFarmer/templates/{f}")
+        for f in published_files():
+            if f.startswith("wiki/"):
+                z.write(os.path.join(BASE_DIR, f), f"LootFarmer/{f}")
         z.writestr("LootFarmer/HOW TO UPDATE.txt", "\r\n".join([
             "1. Close Loot Farmer.",
             "2. Copy everything in this LootFarmer folder into your existing LootFarmer folder, and choose",
