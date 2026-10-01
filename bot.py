@@ -33,6 +33,7 @@ _ensure({"cv2": "opencv-python", "PIL": "Pillow", "numpy": "numpy", "sv_ttk": "s
          "pytesseract": "pytesseract"})
 
 import collections
+import difflib
 import http.server
 import json
 import logging
@@ -49,7 +50,7 @@ import threading
 import time
 import traceback
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 
 import cv2
 import numpy as np
@@ -65,7 +66,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 15  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 16  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -171,7 +172,6 @@ DEFAULTS = {
     "damage_stall_seconds": 20,
     "timer_poll_interval": 2.0,
     "hold_deploy": True,
-    "auto_deploy": True,
     "deploy_pan": "top-left",  # pan the camera into this corner before deploying ("off" to disable)
     "hero_abilities": True,
     "hero_ability_delay": 10,
@@ -224,7 +224,6 @@ DEFAULTS = {
     "coords": {},
     "ocr_regions": {},
     "fixed_points": {},
-    "deploy_units": [],
 }
 
 # (group, blurb, [(key, label, type)]) - type: bool/int/float/str/"secret"
@@ -239,7 +238,6 @@ SETTINGS = [
         ("loot_max_plausible", "Ignore reads above", int),
     ]),
     ("Battle", "Deploying and surrendering.", [
-        ("auto_deploy", "Auto-deploy whatever is on the troop bar", bool),
         ("deploy_spells", "Also drop spells at the drop point", bool),
         ("deploy_pan", "Pan view before deploying (top-left/top-right/bottom-left/bottom-right/off)", str),
         ("hero_abilities", "Use hero abilities", bool),
@@ -311,6 +309,7 @@ SETTINGS = [
     ]),
 ]
 
+RUNTIME_KEYS = ("scans", "plans", "account_tags", "_last_account_idx")  # saved by the bot, not settings
 _cfg_lock = threading.Lock()
 
 
@@ -326,12 +325,17 @@ def load_config():
         except OSError:
             pass
         err = f"config.json couldn't be read ({e}); running on defaults. The old file is kept as config.json.broken."
+    for k in [k for k in cfg if k not in DEFAULTS and k not in RUNTIME_KEYS]:
+        del cfg[k]  # settings of removed features: dropped on the next save
+    tagged = set((cfg.get("account_tags") or {}).values())
+    misread = lambda a: a not in tagged and difflib.get_close_matches(a, tagged, 1, 0.75)
+    for k in ("scans", "plans", "bb_bonus_days"):  # nothing filed under an unreadable / misread account name
+        cfg[k] = {a: v for a, v in (cfg.get(k) or {}).items() if a not in ("", "?") and not misread(a)}
     for k in ("coords", "ocr_regions", "fixed_points"):
         cfg[k] = cfg.get(k) or {}
     for k, path in BUNDLED.items():
         if not (cfg.get(k) and os.path.exists(cfg[k])) and os.path.exists(path):
             cfg[k] = path
-    cfg["deploy_units"] = cfg.get("deploy_units") or []
     cfg["bb_bonus_days"] = dict(cfg.get("bb_bonus_days") or {})
     cfg["discord_webhook"] = cfg.get("discord_webhook") or DEFAULTS["discord_webhook"]  # blank saved = the built-in
     player = r"C:\Program Files\BlueStacks_nxt\HD-Player.exe"
@@ -1074,6 +1078,71 @@ def count_of(name):
     return int(m.group(1)) if m else 1
 
 
+def time_to_max(sd, base):
+    """(builder-seconds of upgrades left until everything is max for this hall, upgrades left, builders) from a
+    planner scan. Upgrade times from the wiki data; walls aren't counted, nor what's upgrading right now."""
+    hall, hero = sd.get("hall"), sd.get("hero_hall")
+    total = n = 0
+    for r in sd.get("items", []):
+        e = wiki_data().get(r.get("key"))
+        mx = max_level(r["key"], hall, hero) if e else None
+        if mx is None or r.get("level") is None:
+            continue
+        for lv in e["levels"]:
+            if r["level"] < lv["level"] <= mx:
+                total += lv.get("time", 0) * r.get("count", 1)
+                n += r.get("count", 1)
+    huts = sum(r.get("count", 1) for r in sd.get("items", []) if r.get("key") == "home:builders hut")
+    return total, n, (huts or 5) if base == "home" else 3  # Builder Base: its top bar shows x/3
+
+
+def read_clipboard():
+    """Windows clipboard text ('' if none). BlueStacks copies Android's clipboard here."""
+    try:
+        return subprocess.run(["powershell", "-NoProfile", "-Command", "Get-Clipboard -Raw"], capture_output=True,
+                              text=True, timeout=15, creationflags=NO_WINDOW).stdout or ""
+    except Exception:
+        return ""
+
+
+def settings_drag_start(f):
+    """y of a grey section-header band low in More Settings' list (rows are blue), or None."""
+    k = f.shape[1] / 1920
+    y0 = int(240 * k)
+    col = f[y0:int(900 * k), int(500 * k)].astype(int)
+    grey = (np.abs(col[:, 0] - col[:, 2]) < 25) & (col.mean(axis=1) > 170)
+    runs, start = [], None
+    for i, g in enumerate(list(grey) + [False]):
+        if g and start is None:
+            start = i
+        elif not g and start is not None:
+            if i - start >= 20 * k:
+                runs.append(y0 + (start + i) // 2)
+            start = None
+    low = [y for y in runs if y >= 300 * k]  # room to drag at least ~280px up
+    return max(low) if low else None
+
+
+def export_items(data):
+    """The game's 'Export Village data' JSON -> {'home': items, 'builder': items} in the planner's scan format.
+    Exact levels of everything built (an upgrading one counts as its next level, like plan_progress does)."""
+    ids = {i: k for k, e in wiki_data().items() for i in e.get("ids", [])}
+    out = {}
+    for base, parts in (("home", ("buildings", "traps", "heroes", "guardians")),
+                        ("builder", ("buildings2", "traps2", "heroes2"))):
+        items = {}
+        for part in parts:
+            for x in data.get(part) or []:
+                k = ids.get(x.get("data"))
+                if k and isinstance(x.get("lvl"), int):
+                    up = "timer" in x
+                    r = items.setdefault((k, x["lvl"] + up, up), {"key": k, "name": wiki_data()[k]["name"],
+                                                                  "level": x["lvl"] + up, "count": 0, "upgrading": up})
+                    r["count"] += x.get("cnt", 1)  # supercharged copies come as separate rows
+        out[base] = list(items.values())
+    return out
+
+
 def available_slots(frame):
     """(normal, goblin) free slots from an open builder/lab list's 'Available!' rows. The goblin builder /
     researcher (costs gems) has a green face next to its row; the normal builder/researcher doesn't."""
@@ -1174,7 +1243,8 @@ class Bot:
         self._bb_next = {}     # account -> time of its next Builder Base visit
         self._acc_idx = -1
         self.loot = {}        # account -> [gold, elixir, dark, attacks] farmed this session
-        self._names = []      # account names seen (misreads snap to these)
+        self._names = list(dict.fromkeys((cfg.get("account_tags") or {}).values()))  # misreads snap to these
+        self._saving_home = None  # account farming for its next home plan target: no Builder Base trips meanwhile
         self._last_name = None
         self._cur = self._pre = None  # (account, (gold, elixir, dark)) now / just before the attack
         self._switch_streak = 0
@@ -1387,7 +1457,14 @@ class Bot:
             return self.attack_now()
         for kind in ("builder", "lab"):
             if self.cfg[f"{kind}_upgrades_enabled"] and time.time() >= self._upgrade_backoff.get(kind, 0):
+                sv = self._saving_home if kind == "builder" else None
+                have = {"gold": storage.get("gold"), "elixir": storage.get("elixir"), "dark": self._cur[1][2]}
+                if sv and sv[0] == self._last_name and time.time() < sv[3] and have.get(sv[2]) is not None \
+                        and have[sv[2]] < sv[1]:
+                    continue  # still short of the plan's next target: no need to open the list
                 if self.free_slots(frame, kind) == 0:
+                    if kind == "builder":
+                        self._saving_home = None  # every builder busy: nothing to save up for right now
                     if self.maybe_rescan(kind):  # all busy: still refresh the planner's view now and then
                         return
                     continue  # all busy: no need to open the list
@@ -1395,8 +1472,9 @@ class Bot:
                 return  # screen changed; look again
         if self.cfg["bank_spend_enabled"] and self.spend_bank(storage):
             return  # screen changed while buying; look again
-        if self.cfg["builder_base_enabled"] and self.builder_base():
-            return  # back home; look again
+        if self.cfg["builder_base_enabled"] and (self._saving_home or (None,))[0] != self._last_name \
+                and self.builder_base():
+            return  # back home; look again (one side at a time: not while saving up for a home target)
         if self.account_done(frame) and self.switch_account():
             return
         self.attack_now()
@@ -1577,6 +1655,8 @@ class Bot:
     def deploy(self):
         c = self.cfg
         self._ability_cards = []
+        if c.get("deploy_pan", "off") in PAN_DIRS:  # each account/village keeps its own zoom: zoom fully out
+            zoom_out(self.adb)                    # first, so the pan lands on the same view every time
         pan_view(self.adb, c.get("deploy_pan", "off"))
         self.sleep(0.5)
         a, b = self.line()
@@ -1593,19 +1673,8 @@ class Bot:
             cv2.imwrite(os.path.join(BASE_DIR, "debug_deploy.png"), dbg)
         except Exception as e:
             log_file.info(f"debug_deploy.png: {e}")
-        if c["auto_deploy"]:
-            if self.auto_deploy(a, b):
-                return
-            self.log("Couldn't read the troop bar - using the captured deploy units instead.", "warn")
-        for unit in c["deploy_units"]:
-            name, n = unit["name"], max(1, int(unit.get("taps", 1)))
-            hit = self.find(self.shot(), name)
-            if not hit:
-                self.log(f"{name}: not on the troop bar, skipped.")
-                continue
-            self.tap(hit, c["deploy_select_delay"])
-            self.drop(a, b, n, hit)
-        self.log("Army deployed.")
+        if not self.auto_deploy(a, b):
+            self.log("Couldn't read the troop bar - no troops deployed (see debug_deploy.png).", "err")
 
     def finish_battle(self):
         c = self.cfg
@@ -1620,6 +1689,8 @@ class Bot:
                 self.log(f"Used {len(abilities)} hero abilities.")
                 abilities = []
             frame = self.shot()
+            if self.pick_reward(frame):
+                continue
             if self.find(frame, "return_home_button"):
                 self.log("Battle ended on its own.")
                 return
@@ -1645,12 +1716,33 @@ class Bot:
             self.sleep(c["timer_poll_interval"])
         else:
             self.log(f"{c['battle_max_wait']:.0f}s battle limit - surrendering.")
+        self.pick_reward(self.shot())
         for name in ("surrender_button", "surrender_confirm_button"):
             hit = self.wait_for(name, 6) or c["coords"].get(name)
             if not hit:
                 self.log(f"Couldn't find '{name}'.", "warn")
                 return
             self.tap(hit, 0.8)
+
+    def pick_reward(self, frame):
+        """'Pick a Reward!' (shown mid-battle at star milestones) covers Surrender until a card is taken. Take the
+        resource card (elixir / gold / dark elixir pile), else the middle one. True if it was showing."""
+        if not self.v.find(frame, "pick_reward_title", 0.85):
+            return False
+        k = frame.shape[1] / 1920
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        best, pick = 1500 * k * k, (int(964 * k), int(560 * k))  # a troop card scores ~300 (its level badge)
+        for x in (578, 964, 1350):
+            c = hsv[int(440 * k):int(600 * k), int((x - 120) * k):int((x + 120) * k)]
+            h, s, v = c[:, :, 0], c[:, :, 1], c[:, :, 2]
+            n = (((h >= 135) & (h <= 165) & (s > 120) & (v > 150)).sum()  # elixir
+                 + ((h >= 18) & (h <= 32) & (s > 150) & (v > 180)).sum()  # gold
+                 + ((h >= 120) & (h <= 170) & (s > 80) & (v >= 40) & (v <= 120)).sum())  # dark elixir
+            if n > best:
+                best, pick = n, (int(x * k), int(560 * k))
+        self.tap(pick, 1.0)
+        self.log("Picked a battle reward.")
+        return True
 
     # --- walls ---
     def spend_bank(self, storage):
@@ -1779,7 +1871,6 @@ class Bot:
     def buy_wall(self, cur, balance=None):
         """Builder list -> 'Wall' row (selects a wall) -> close list -> Upgrade More -> Upgrade in `cur`
         -> Okay, but only if the dialog really says it upgrades Walls for `cur` (never gems)."""
-        icon_of = lambda f: top_bar(f, "builder")[0]
         region = self.cfg["ocr_regions"].get(f"bank_{cur}_region")
         frame = self.shot()
         if balance is None and region:
@@ -2159,6 +2250,8 @@ class Bot:
             self.back_to_village(icon)
             return self.log(f"{KIND_NAMES[kind]}: " + ("only the goblin is free (costs gems) - not using it"
                                                    if goblin else "no free slot") + ". Checking again in 30 min.")
+        if kind == "builder":
+            self._saving_home = None
         seen = self.read_list()  # the whole list first: the discount and levels are worked out from all of it
         plan, levels = self.plan_positions(kind, seen)
         if plan:  # this account has a plan: stick to it - the next target in order, or wait (keep farming) for it
@@ -2168,9 +2261,13 @@ class Bot:
             if not buy:
                 it = self.plan_items(kind)[i]
                 self._upgrade_backoff[kind] = time.time() + 900
+                if kind == "builder":  # farm home until it's bought - the Builder Base waits, the list stays shut
+                    self._saving_home = (self._last_name, min(p for _, p, _ in rows),
+                                         wiki_data()[it["key"]]["levels"][0]["res"], time.time() + 3600)
                 self.back_to_village(icon)
                 return self.log(f"{KIND_NAMES[kind]}: next in the plan is {wiki_data()[it['key']]['name']} -> "
-                                f"{it['to']} ({min(p for _, p, _ in rows):,}) - farming until it's affordable.")
+                                f"{it['to']} ({min(p for _, p, _ in rows):,}) - farming until it's affordable"
+                                + (" (Builder Base visits wait till then)." if kind == "builder" else "."))
         best = None
         for nm, price, ok in seen:
             skip = is_wall(nm) or (  # walls: the wall routine; TH: optional no-rush
@@ -2201,7 +2298,8 @@ class Bot:
         for _ in range(8):
             frame = self.shot()
             rows = list_rows(frame)
-            match = [r for r in rows if r[1] == price and r[2]]
+            # name AND price: two rows can cost the same (Builder Base Cannon / Elixir Storage: 2,500,000)
+            match = [r for r in rows if r[1] == price and r[2] and name_match(r[0], nm)]
             box = panel_box(frame)
             if match or not box or rows == prev:
                 break
@@ -2226,6 +2324,13 @@ class Bot:
         if not hit:  # a building: the row only selected it - close the list, then its own Upgrade button
             if panel_box(self.shot()):
                 self.tap(icon, 1.2)
+            got, glv = self.selected_label(self.shot())  # is the selected building really the one chosen?
+            want = re.sub(r"(?i)\s*x\s*\d+\s*$", "", nm)
+            if got and not name_match(got, want):
+                self._upgrade_backoff[kind] = time.time() + 600
+                self.back_to_village(icon)
+                return self.log(f"{KIND_NAMES[kind]}: the list selected '{got}' (level {glv}), not '{want}' - "
+                                "backed out.", "warn")
             up = self.wait_for("building_upgrade_button", 4)
             if up:
                 self.tap(up, 1.6)
@@ -2291,11 +2396,22 @@ class Bot:
         if kind.endswith("lab"):
             return {}, {}
         base = "builder" if kind.startswith("bb_") else "home"
-        scan = self.record_scan(base, seen)
-        levels = {(r["name"], r["price"]): r["level"] for r in scan["items"]}
+        sd = ((self.cfg.get("scans") or {}).get(self._last_name) or {}).get(base) or {}
+        if sd.get("source") == "export":  # exact levels already known: the list only gives names + prices
+            f = infer_discount([(n, p) for n, p, _ in seen], base)
+            rows = [{"name": nm, "price": p, "key": wiki_key(nm, base)} for nm, p, _ in seen]
+            for r in rows:
+                r["level"] = level_for_price(r["key"], r["price"], f) if r["key"] else None
+            exact = sd["items"]
+        else:
+            rows = exact = self.record_scan(base, seen)["items"]
+        levels = {(r["name"], r["price"]): r["level"] for r in rows}
         pos = {}
         for i, it in enumerate(self.plan_items(kind)):
-            for r in scan["items"]:
+            if not any(r["key"] == it["key"] and not r.get("upgrading") and (r["level"] is None or r["level"] < it["to"])
+                       for r in exact):
+                continue  # every copy is there already (or upgrading to it)
+            for r in rows:
                 if r["key"] == it["key"] and (r["level"] is None or r["level"] < it["to"]):
                     pos.setdefault((r["name"], r["price"]), i)
         return pos, levels
@@ -2370,13 +2486,19 @@ class Bot:
         scan = ((self.cfg.get("scans") or {}).get(acc) or {}).get(base)
         if not scan:
             return
-        for r in scan["items"]:
-            if r["name"] == nm and r["price"] == price:
-                r["count"] -= 1
-                if lv is not None:
-                    scan["items"].append({"name": nm + " (upgrading)", "price": 0, "ok": False, "key": r["key"],
-                                          "count": 1, "level": lv + 1, "upgrading": True})
-                break
+        if scan.get("source") == "export":  # exact rows: the lowest copy of that building (at lv if known)
+            k = wiki_key(nm, base)
+            mine = sorted((r for r in scan["items"] if r["key"] == k and not r.get("upgrading")),
+                          key=lambda r: (lv is not None and r["level"] != lv, r["level"]))
+        else:
+            mine = [r for r in scan["items"] if r.get("name") == nm and r.get("price") == price]
+        for r in mine[:1]:
+            r["count"] -= 1
+            lv = r["level"] if lv is None and scan.get("source") == "export" else lv
+            if lv is not None:
+                scan["items"].append({"name": r["name"] if scan.get("source") == "export" else nm + " (upgrading)",
+                                      "price": 0, "ok": False, "key": r["key"], "count": 1, "level": lv + 1,
+                                      "upgrading": True})
         scan["items"] = [r for r in scan["items"] if r["count"] > 0]
         self.prune_plan(acc, base)
         save_config(self.cfg)
@@ -2384,6 +2506,10 @@ class Bot:
 
     def level_label(self, frame):
         """'Cannon (Level 21)' shown under a selected building -> 21, else None."""
+        return self.selected_label(frame)[1]
+
+    def selected_label(self, frame):
+        """'Cannon (Level 21)' shown under a selected building -> ('Cannon', 21); (None, None) if unreadable."""
         k = frame.shape[1] / 1920
         c = frame[int(640 * k):int(790 * k), int(360 * k):int(1560 * k)]
         hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
@@ -2392,9 +2518,9 @@ class Bot:
             t = pytesseract.image_to_string(cv2.copyMakeBorder(255 - m, 20, 20, 20, 20, cv2.BORDER_CONSTANT,
                                                                value=255), config="--psm 6", timeout=6)
         except Exception:
-            return None
-        hit = re.search(r"(?i)l[e3]v[e3]l\s*([0-9]{1,3})", t)
-        return int(hit.group(1)) if hit else None
+            return None, None
+        hit = re.search(r"(?i)([A-Za-z0-9.'& -]*?)\s*\(?\s*l[e3]v[e3]l\s*([0-9]{1,3})", t)
+        return (hit.group(1).strip() or None, int(hit.group(2))) if hit else (None, None)
 
     def resolve_levels(self, kind, base, limit=10):
         """Rows the price didn't settle (duplicate prices, OCR slips, no wiki data): tap each one in the list and
@@ -2438,6 +2564,76 @@ class Bot:
         save_config(self.cfg)
         self.emit("scan", acc)
 
+    def export_village(self):
+        """Settings > More Settings > Data Export 'Copy': the game's own JSON with every level, both villages.
+        Read back from the Windows clipboard. None if any step didn't work (then the list is read instead)."""
+        self.back_to_village()
+        f = self.shot()
+        k = f.shape[1] / 1920
+        self.tap(self.find(f, "settings_cog_button") or (int(1842 * k), int(765 * k)), 1.5)
+        # strict matches only: a looser one takes look-alike green buttons (Credits, Change Name...)
+        more = None
+        for _ in range(6):
+            more = self.v.find(self.shot(), "more_settings_button", 0.9)
+            if more:
+                break
+            self.sleep(0.8)
+        data = None
+        if more:
+            self.tap(more, 2.0)  # let the window finish opening before anything touches it
+            hit = None
+            for _ in range(10):  # the page opens wherever it was last scrolled to (the top after a game start)
+                f = self.shot()
+                hit = self.v.find(f, "export_copy_row", 0.9)  # the Change Name row scores ~0.75
+                y = None if hit else settings_drag_start(f)
+                if y is None:
+                    break
+                # SLOW drag from a grey section header, never from a row: a touch on a row that doesn't turn
+                # into a scroll presses it (flips a setting, opens Change Name...)
+                self.adb.swipe(int(500 * k), y, int(500 * k), max(int(20 * k), y - int(400 * k)), 1200)
+                self.sleep(1.2)
+            if hit:
+                self.tap((hit[0] + int(398 * k), hit[1]), 1.0)  # the green Copy button at the row's right
+                for _ in range(5):
+                    try:
+                        d = json.loads(read_clipboard())
+                        if d.get("tag") and d.get("buildings") and abs(time.time() - d.get("timestamp", 0)) < 900:
+                            data = d
+                            break
+                    except (ValueError, AttributeError):
+                        pass
+                    self.sleep(1.0)
+        self.back_to_village()
+        return data
+
+    def scan_export(self):
+        """Fill this account's planner scans (home + Builder Base) from the data export. True if it worked.
+        The export carries the player tag, so an account whose name OCR slips ('GeoCo!3') still files right."""
+        data = self.export_village()
+        if not data:
+            self.log("Upgrade planner: the game's data export didn't come through - reading the builder list "
+                     "instead.", "warn")
+            return False
+        tags = self.cfg.setdefault("account_tags", {})
+        acc = tags.get(data["tag"]) or (self._last_name if self._last_name not in (None, "?") else None)
+        if not acc:
+            return False
+        tags[data["tag"]] = self._last_name = acc
+        scans = self.cfg.setdefault("scans", {}).setdefault(acc, {})
+        for base, items in export_items(data).items():
+            if not items:
+                continue
+            hall = next((r["level"] - r["upgrading"] for r in items
+                         if r["key"] in ("home:town hall", "builder:builder hall")), None)
+            hero = next((r["level"] - r["upgrading"] for r in items if r["key"] == "home:hero hall"), None)
+            scans[base] = {"time": time.strftime("%Y-%m-%d %H:%M"), "discount": 1.0, "items": items, "hall": hall,
+                           "hero_hall": hero, "source": "export"}
+            self.prune_plan(acc, base)
+        save_config(self.cfg)
+        self.emit("scan", acc)
+        self.log(f"Upgrade planner: read {acc}'s exact levels from the game's data export.", "ok")
+        return True
+
     def maybe_rescan(self, kind, hours=6):
         """Builders all busy: read the list anyway if this account's planner scan is missing or old. True if it did."""
         if kind.endswith("lab") or not self._last_name or self._last_name == "?":
@@ -2450,6 +2646,8 @@ class Bot:
             age = 10 ** 9
         if age < hours * 3600:
             return False
+        if self.scan_export():
+            return True
         icon = top_bar(self.shot(), kind)[0]
         self.tap(icon, 1.3)
         self.sleep(0.5)
@@ -2476,7 +2674,9 @@ class Bot:
                 break
             self.sleep(1.0)
             f = self.shot()
-        if not self._last_name:
+        if self.scan_export():  # exact levels of both villages, straight from the game
+            return self._last_name, kind
+        if not self._last_name or self._last_name == "?":
             raise RuntimeError("couldn't read the account name at the top-left - close any popup and try again")
         icon = top_bar(f, kind)[0]
         if not panel_box(f):
@@ -2510,7 +2710,8 @@ class Bot:
             return None, None
         x, y, w, h = st[max(big, key=lambda i: st[i, 4]), :4]
         y += int(H * 0.6)
-        return (x + w // 2, y + h // 2), white_number(f, (x + 10, y + 10, x + int(w * 0.72), y + h - 10))
+        # from the very edge: a 7-digit price starts right at it (x + 10 cut '4 400 000' to '400 000')
+        return (x + w // 2, y + h // 2), white_number(f, (x, y + 10, x + int(w * 0.72), y + h - 10))
 
     def free_slots(self, frame, kind):
         """Normal builders / lab slots free. A goblin icon means only the (gem-costing) goblin is free = 0."""
@@ -2623,22 +2824,6 @@ class Bot:
         f = k / (n - 1) if n > 1 else 0.5
         return int(a[0] + (b[0] - a[0]) * f), int(a[1] + (b[1] - a[1]) * f)
 
-    def shift_line(self, a, b, px, W=1920, H=1080):
-        """Line a->b moved px away from the base (negative = towards it), kept on screen and above the troop bar.
-        Away from the base = towards the corner the camera was panned to (else away from the screen centre)."""
-        if not px:
-            return a, b
-        dx, dy = b[0] - a[0], b[1] - a[1]
-        ln = (dx * dx + dy * dy) ** 0.5
-        pan = PAN_DIRS.get(self.cfg.get("deploy_pan"))
-        out = (-pan[0], -pan[1]) if pan else ((a[0] + b[0]) / 2 - W / 2, (a[1] + b[1]) / 2 - H / 2)
-        nx, ny = (-dy / ln, dx / ln) if ln else out
-        if nx * out[0] + ny * out[1] < 0:
-            nx, ny = -nx, -ny
-        k = px / ((nx * nx + ny * ny) ** 0.5 or 1)
-        fit = lambda p: [int(min(max(p[0] + nx * k, 20), W - 20)), int(min(max(p[1] + ny * k, 20), H * 0.8))]
-        return fit(a), fit(b)
-
     def drop(self, a, b, n, card):
         """Deploy n of the selected unit as taps spread evenly along a->b. Never drags: a moving touch scrolls the
         view instead of placing troops. With a single spot (a == b) and hold-to-deploy, a still long-press is used."""
@@ -2673,45 +2858,12 @@ class Bot:
         for x, y, _, n in spells:  # spells FIRST, as taps spread along their line (a hold doesn't cast them)
             self.tap((x, y), self.cfg["deploy_select_delay"])
             self.drop(sa, sb, n, None)
-        # On another PC the view can sit differently (zoom, map, pan), putting the saved line on scenery or in the
-        # red zone: taps then just select the card. The map edge always runs at the same angle, so the fix is a
-        # parallel shift - learned once per PC (drop_offset) and reused.
-        delay, off = self.cfg["deploy_select_delay"], int(self.cfg.get("drop_offset", 0))
-        for x, y, _, n in troops:
+        delay = self.cfg["deploy_select_delay"]
+        for x, y, _, n in troops:  # every troop on the saved line - the camera pans to the same spot each battle
             self.tap((x, y), delay)
-            self.drop(*self.shift_line(a, b, off), n, (x, y))
-        tried = {off}
-        while True:
-            self.sleep(0.6)
-            left = [cd for cd in troop_bar(self.shot()) if cd[2] == "troop" and cd[3]]
-            if not left:
-                break
-            x, y, _, n = left[0]  # probe: ONE troop per candidate line, nearest first, until one lands
+            self.drop(a, b, n, (x, y))
+        for k, (x, y, _, _) in enumerate(singles):  # heroes / siege spread evenly along the same line
             self.tap((x, y), delay)
-            found = None
-            for cand in sorted(set(range(-360, 361, 60)) - tried, key=lambda o: (abs(o - off), o)):
-                tried.add(cand)
-                self.adb.tap(*self.along(*self.shift_line(a, b, cand), 1, 2))
-                self.sleep(0.5)
-                now = next(((cd[3] or 0) for cd in troop_bar(self.shot()) if abs(cd[0] - x) < 30), n)
-                if now < n:
-                    found = cand
-                    break
-            if found is None:
-                self.log(f"{sum(cd[3] for cd in left)} troops won't land anywhere near the drop line - re-pick it "
-                         "(Setup > Troop drop line, on the scouting screen). See debug_deploy.png.", "err")
-                break
-            off = found
-            self.log(f"Troops weren't landing - moved the drop line {abs(off)}px "
-                     f"{'away from' if off > 0 else 'towards'} the base; remembered for next time.", "warn")
-            self.cfg["drop_offset"] = off
-            save_config(self.cfg)
-            for x2, y2, _, n2 in left:
-                self.tap((x2, y2), delay)
-                self.drop(*self.shift_line(a, b, off), n2, (x2, y2))
-        a, b = self.shift_line(a, b, off)
-        for k, (x, y, _, _) in enumerate(singles):  # heroes / siege spread evenly along the line
-            self.tap((x, y), self.cfg["deploy_select_delay"])
             self.adb.tap(*self.along(a, b, k, len(singles)))
             self.sleep(0.3)
         self._ability_cards = [(x, y) for x, y, _, _ in singles]  # tapping a deployed hero's card = its ability
@@ -2993,7 +3145,7 @@ class Tunnel:
             st = None
         while True:
             try:
-                if self._alive(st) and not self._link_works(st["url"]):
+                if self._alive(st) and self._link_works(st["url"]) is False:
                     # e.g. a saved tunnel Cloudflare has deleted: cloudflared keeps running ('Tunnel not found')
                     log_file.warning(f"Anywhere link {st['url']} is dead - starting a new one.")
                     self._kill(st)
@@ -3011,10 +3163,8 @@ class Tunnel:
                             if self._link_works(st["url"]):
                                 break
                             time.sleep(5)
-                        else:
-                            log_file.warning(f"New Anywhere link {st['url']} never answered - trying another.")
-                            self._kill(st)
-                            st = None
+                        else:  # can't confirm it (our own check may be what's failing): hand it out anyway
+                            log_file.warning(f"New Anywhere link {st['url']} didn't answer a check yet.")
                     if not st:
                         time.sleep(30)
                         continue
@@ -3024,7 +3174,7 @@ class Tunnel:
                     time.sleep(10)
                     if time.time() - checked > 60:
                         checked = time.time()
-                        if not self._link_works(st["url"]) and not self._link_works(st["url"]):  # twice: a blip
+                        if self._link_works(st["url"]) is False and self._link_works(st["url"]) is False:
                             log_file.warning(f"Anywhere link {st['url']} stopped working - starting a new one.")
                             self._kill(st)
                             break
@@ -3040,8 +3190,8 @@ class Tunnel:
 
     @staticmethod
     def _link_works(url):
-        """Our server answers (any status) through the tunnel. Cloudflare says 530 / the name stops resolving
-        when a quick tunnel is gone. No internet at all also reads as 'dead' - a new tunnel is harmless then."""
+        """True: our server answers through the tunnel. False: Cloudflare says it's gone (name doesn't exist /
+        530). None: can't tell (no internet, VPN reconnecting...) - never a reason to throw a working link away."""
         import urllib.error
         import urllib.request
         host = url.split("//", 1)[-1].split("/")[0]
@@ -3049,17 +3199,17 @@ class Tunnel:
             r = json.load(urllib.request.urlopen(urllib.request.Request(
                 f"https://cloudflare-dns.com/dns-query?name={host}&type=A",
                 headers={"accept": "application/dns-json"}), timeout=10))
-            if r.get("Status") != 0 or not r.get("Answer"):
+            if r.get("Status") == 3 or (r.get("Status") == 0 and not r.get("Answer")):  # 3 = no such name
                 return False
         except Exception:
-            return False
+            return None
         try:
             urllib.request.urlopen(url + "/status", timeout=15).close()
             return True
         except urllib.error.HTTPError as e:
             return e.code not in (502, 530, 1033)
         except Exception:
-            return False
+            return None
 
     @staticmethod
     def kill_saved():
@@ -3149,12 +3299,27 @@ def post_discord(cfg, text, files=()):
         body, ctype = b"".join(parts) + f"--{b}--{nl}".encode(), f"multipart/form-data; boundary={b}"
     else:
         body, ctype = payload.encode(), "application/json"
-    try:
-        req = urllib.request.Request(hook, body, method="POST", headers={"Content-Type": ctype, "User-Agent": "LootFarmer"})
-        urllib.request.urlopen(req, timeout=60).close()
-        return True
-    except Exception as e:
-        log_file.info(f"Discord post failed: {e}")
+    import urllib.error
+    for i in range(5):  # at start-up the network may not be up yet; Discord rate-limits with 429 + retry_after
+        try:
+            req = urllib.request.Request(hook, body, method="POST",
+                                         headers={"Content-Type": ctype, "User-Agent": "LootFarmer"})
+            urllib.request.urlopen(req, timeout=60).close()
+            return True
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 502, 503, 504):
+                log_file.warning(f"Discord post refused: {e}")
+                return
+            wait = 5 * (i + 1)
+            try:
+                wait = float(json.loads(e.read()).get("retry_after", wait)) + 1
+            except Exception:
+                pass
+        except Exception as e:
+            log_file.info(f"Discord post failed (try {i + 1}): {e}")
+            wait = 10 * (i + 1)
+        time.sleep(min(wait, 60))
+    log_file.warning("Discord post failed 5 times - giving up on this message.")
 
 
 def single_instance():
@@ -3198,32 +3363,32 @@ def touch_device(adb):
     return _TOUCH["dev"]
 
 
-def zoom_out(adb, times=3, W=1920, H=1080):
+def zoom_out(adb, times=3, W=1920, H=1080, spread=((460, 900), (1460, 1020))):
     """Two-finger pinch (fingers moving together) = the game's zoom-out, sent straight to the touch device.
-    Stops at the game's limit, so extra pinches are harmless. Used to find the boat: zoomed out, one screen shows
-    most of a village."""
+    Stops at the game's limit, so extra pinches are harmless. Raw input_event structs are written in one shell
+    call per pinch (sendevent costs ~50 ms per event: 3 pinches took 16 s, longer than half the scout timer).
+    spread: each finger's start -> end x (swap them to zoom in)."""
+    import base64
     d = touch_device(adb)
     if not d:
         return False
     dev, mx, my = d
-    ev = lambda t, c, v: f"sendevent {dev} {t} {c} {v}"
+    size = 24  # struct input_event on the 64-bit Android image: timeval 16 + 2 + 2 + 4
+    ev = lambda t, c, v: struct.pack("<qqHHI", 0, 0, t, c, v & 0xFFFFFFFF)
+    assert len(ev(0, 0, 0)) == size
     for _ in range(times):
-        cmds = []
+        steps = []
         for i in range(9):
-            f = i / 8
-            for slot, (x0, x1) in enumerate(((460, 900), (1460, 1020))):
-                cmds.append(ev(3, 47, slot))
-                if i == 0:
-                    cmds.append(ev(3, 57, 100 + slot))
-                cmds += [ev(3, 53, int((x0 + (x1 - x0) * f) / W * mx)), ev(3, 54, int(480 / H * my))]
-            if i == 0:
-                cmds.append(ev(1, 330, 1))  # BTN_TOUCH down
-            cmds.append(ev(0, 0, 0))
-        for slot in (0, 1):
-            cmds += [ev(3, 47, slot), ev(3, 57, 4294967295)]
-        cmds += [ev(1, 330, 0), ev(0, 0, 0)]
-        adb.shell("; ".join(cmds), timeout=30)
-        time.sleep(0.4)
+            f, b = i / 8, b""
+            for slot, (x0, x1) in enumerate(spread):
+                b += ev(3, 47, slot) + (ev(3, 57, 100 + slot) if i == 0 else b"")
+                b += ev(3, 53, int((x0 + (x1 - x0) * f) / W * mx)) + ev(3, 54, int(480 / H * my))
+            b += (ev(1, 330, 1) if i == 0 else b"") + ev(0, 0, 0)  # BTN_TOUCH down with the first frame
+            steps.append(b)
+        steps.append(ev(3, 47, 0) + ev(3, 57, -1) + ev(3, 47, 1) + ev(3, 57, -1) + ev(1, 330, 0) + ev(0, 0, 0))
+        adb.shell("; sleep 0.02; ".join(f"echo {base64.b64encode(s).decode()} | base64 -d > {dev}" for s in steps),
+                  timeout=30)
+        time.sleep(0.3)
     return True
 
 
@@ -3280,11 +3445,11 @@ class DropLinePicker(tk.Toplevel):
         self.pts = [list(p) if p else None for p in self.pts]
         bar = ttk.Frame(self, padding=S(12, 10))
         bar.pack(fill="x")
-        ttk.Label(bar, text="On the scouting screen: 'Pan to corner', then click where the line STARTS and ENDS "
+        ttk.Label(bar, text="On the scouting screen: 'Zoom out + pan', then click where the line STARTS and ENDS "
                             "(grass outside the red border).").pack(side="left")
         ttk.Button(bar, text="Save", style="Accent.TButton", command=self.save).pack(side="right")
         ttk.Button(bar, text="Refresh screenshot", command=self.refresh).pack(side="right", padx=S(8))
-        ttk.Button(bar, text="Pan to corner + refresh", command=self.pan).pack(side="right")
+        ttk.Button(bar, text="Zoom out + pan + refresh", command=self.pan).pack(side="right")
         ttk.Button(bar, text="Clear", command=self.clear).pack(side="right")
         self.info = ttk.Label(self, style="Muted.TLabel", padding=S(12, 0, 12, 6))
         self.info.pack(anchor="w")
@@ -3347,15 +3512,14 @@ class DropLinePicker(tk.Toplevel):
         where = self.app.cfg.get("deploy_pan", "off")
         if where not in PAN_DIRS:
             return messagebox.showinfo("Pan", "Set 'Pan view before deploying' in Settings > Battle first.", parent=self)
-        self.app.bg(lambda: (pan_view(self.app.adb, where), time.sleep(0.6), self.app.ui(self.refresh)))
+        self.app.bg(lambda: (zoom_out(self.app.adb), pan_view(self.app.adb, where), time.sleep(0.6),
+                             self.app.ui(self.refresh)))
 
     def save(self):
         a, b = self.pts
         if not a:
             return messagebox.showinfo("Drop line", "Click at least the start point.", parent=self)
         fp = self.app.cfg["fixed_points"]
-        if self.keys[0] == "deploy_point":
-            self.app.cfg["drop_offset"] = 0  # a freshly picked line needs no learned shift
         fp[self.keys[0]] = a
         if b:
             fp[self.keys[1]] = b
@@ -3523,6 +3687,8 @@ class PlannerWindow(tk.Toplevel):
         else:
             d = sd.get("discount", 1)
             self.info.config(text=f"{acc} · {what} {hall or '?'} · scanned {sd.get('time', '?')}"
+                                  + (" · exact levels from the game's data export" if sd.get("source") == "export"
+                                     else "")
                                   + (f" · prices were {round((1 - d) * 100)}% off (Hammer Jam / Gold Pass) - "
                                      "levels worked out with that" if d < 1 else ""))
         self.qtitle.config(text=f"Upgrade order - {acc or 'no account'}")
@@ -3586,46 +3752,9 @@ class PlannerWindow(tk.Toplevel):
             levels = sorted(((lv, c, up) for lv, c, up in g[k] if lv is not None), key=lambda x: x[0])
             cur = min((lv for lv, c, up in levels), default=None)
             mx = max_level(k, hall, hero_hall)
-            card = tk.Frame(self.cards, bg=CARD, padx=S(10), pady=S(10))
-            head = tk.Frame(card, bg=CARD)
-            head.pack(fill="x")
-            ic = self.icon(k, S(56))
-            if ic:
-                tk.Label(head, image=ic, bg=CARD).pack(side="left")
-            t = tk.Frame(head, bg=CARD)
-            t.pack(side="left", fill="x", expand=True, padx=S(8, 0))
-            self._lbl(t, e["name"], bold=True, size=11).pack(anchor="w")
             have = ", ".join(("not built yet" if lv == 0 else f"lvl {lv}") + (f" ×{c}" if c > 1 else "")
                              + (" ⏳" if up else "") for lv, c, up in levels) or "level unknown"
-            self._lbl(t, have, muted=True, size=9, wraplength=S(230)).pack(anchor="w")
-            if mx:
-                self._lbl(t, f"max {mx} at this hall", muted=True, size=9).pack(anchor="w")
-            info = {"frame": card, "chips": [], "x": None, "name": e["name"].lower(),
-                    "cat": category_of(k.split(":", 1)[1])}
-            self._cards[k] = info
-            if cur is None or mx is None or cur >= mx:
-                self._lbl(card, "✓ maxed for this hall" if cur is not None and mx and cur >= mx else
-                          "(level couldn't be read)", muted=True, size=9).pack(anchor="w", pady=S(6, 0))
-                continue
-            chips = tk.Frame(card, bg=CARD)
-            chips.pack(fill="x", pady=S(8, 0))
-            self._lbl(chips, "Up to:", muted=True, size=9).pack(side="left", padx=S(0, 4))
-            targets = list(range(cur + 1, mx + 1))
-            if len(targets) > 6:  # heroes have dozens of levels: next few + max, plus a picker for any level
-                targets = targets[:4] + [mx]
-                pick = tk.Frame(card, bg=CARD)
-                pick.pack(fill="x", pady=S(6, 0))
-                self._lbl(pick, "or level", muted=True, size=9).pack(side="left")
-                sp = tk.Spinbox(pick, from_=cur + 1, to=mx, width=5, bg="#3a3a3a", fg=TEXT, buttonbackground=CARD,
-                                relief="flat", insertbackground=TEXT)
-                sp.pack(side="left", padx=S(4))
-                self._chip(pick, "Set", lambda k=k, sp=sp, lo=cur + 1, hi=mx: self.add(
-                    k, min(hi, max(lo, int(sp.get())))) if sp.get().isdigit() else None).pack(side="left")
-            for lv in targets:
-                ch = self._chip(chips, ("MAX " if lv == mx else "") + str(lv), lambda k=k, lv=lv: self.add(k, lv))
-                ch.pack(side="left", padx=S(2, 0))
-                info["chips"].append((lv, ch))
-            info["x"] = self._chip(chips, "✕", lambda k=k: self.remove_key(k))
+            self._cards[k] = self._card(k, e, have, cur, mx)
         self.draw_cards()
 
     def draw_cards(self):
@@ -3646,6 +3775,66 @@ class PlannerWindow(tk.Toplevel):
         self.update_chips()
         self.cards.canvas.yview_moveto(0)
 
+    def _card(self, k, e, have, cur, mx):
+        """One card = ONE canvas (icon, text and level chips are canvas items): a widget per label made the
+        window take seconds to show 50 cards."""
+        cv = tk.Canvas(self.cards, bg=CARD, highlightthickness=0, width=S(300), height=S(10))
+        pad, right = S(10), S(290)
+        ic = self.icon(k, S(56))
+        if ic:
+            cv.create_image(pad, pad, image=ic, anchor="nw")
+        tx = pad + S(64)
+        y = cv.bbox(cv.create_text(tx, pad, text=e["name"], anchor="nw", fill=TEXT,
+                                   font=("Segoe UI", 11, "bold"), width=right - tx))[3]
+        y = cv.bbox(cv.create_text(tx, y + S(2), text=have, anchor="nw", fill=MUTED, font=("Segoe UI", 9),
+                                   width=right - tx))[3]
+        if mx:
+            y = cv.bbox(cv.create_text(tx, y + S(2), text=f"max {mx} at this hall", anchor="nw", fill=MUTED,
+                                       font=("Segoe UI", 9)))[3]
+        y = max(y, pad + S(56)) + S(8)
+        info = {"frame": cv, "chips": [], "x": None, "name": e["name"].lower(), "cat": category_of(k.split(":", 1)[1])}
+        if cur is None or mx is None or cur >= mx:
+            y = cv.bbox(cv.create_text(pad, y, anchor="nw", fill=MUTED, font=("Segoe UI", 9), text=(
+                "✓ maxed for this hall" if cur is not None and mx and cur >= mx else "(level couldn't be read)")))[3]
+            cv.configure(height=y + pad)
+            return info
+        x = [pad]
+
+        def chip(text, cmd, line):
+            t = cv.create_text(x[0] + S(7), line + S(3), text=text, anchor="nw", fill=TEXT,
+                               font=("Segoe UI", 9, "bold"))
+            x0, y0, x1, y1 = cv.bbox(t)
+            r = cv.create_rectangle(x0 - S(7), y0 - S(3), x1 + S(7), y1 + S(3), fill="#3a3a3a", width=0)
+            cv.tag_lower(r, t)
+            for item in (t, r):
+                cv.tag_bind(item, "<Button-1>", lambda ev: cmd())
+                cv.tag_bind(item, "<Enter>", lambda ev: cv.configure(cursor="hand2"))
+                cv.tag_bind(item, "<Leave>", lambda ev: cv.configure(cursor=""))
+            x[0] = x1 + S(11)
+            return r, t
+        line = y
+        x[0] = cv.bbox(cv.create_text(pad, line + S(3), text="Up to:", anchor="nw", fill=MUTED,
+                                      font=("Segoe UI", 9)))[2] + S(6)
+        targets = list(range(cur + 1, mx + 1))
+        many = len(targets) > 6  # heroes have dozens of levels: next few + max, plus a picker for any level
+        if many:
+            targets = targets[:4] + [mx]
+        for lv in targets:
+            info["chips"].append((lv, chip(("MAX " if lv == mx else "") + str(lv), lambda lv=lv: self.add(k, lv),
+                                           line)))
+        info["x"] = chip("✕", lambda: self.remove_key(k), line)
+        y = cv.bbox("all")[3] + S(8)
+        if many:
+            x[0] = cv.bbox(cv.create_text(pad, y + S(3), text="or level", anchor="nw", fill=MUTED,
+                                          font=("Segoe UI", 9)))[2] + S(6)
+            sp = tk.Spinbox(cv, from_=cur + 1, to=mx, width=5, bg="#3a3a3a", fg=TEXT, buttonbackground=CARD,
+                            relief="flat", insertbackground=TEXT)
+            x[0] = cv.bbox(cv.create_window(x[0], y, window=sp, anchor="nw"))[2] + S(6)
+            chip("Set", lambda: self.add(k, min(mx, max(cur + 1, int(sp.get())))) if sp.get().isdigit() else None, y)
+            y = cv.bbox("all")[3] + S(4)
+        cv.configure(height=y + pad)
+        return info
+
     def update_chips(self, keys=None):
         """Highlight the chosen target levels (only the cards that changed)."""
         want = {it["key"]: it["to"] for it in self.plan()}
@@ -3654,14 +3843,13 @@ class PlannerWindow(tk.Toplevel):
             c = cards.get(k)
             if not c:
                 continue
-            for lv, ch in c["chips"]:
+            for lv, (r, t) in c["chips"]:
                 on = want.get(k, 0) >= lv
-                ch.config(bg=BLUE if on else "#3a3a3a", fg="#0b1a2b" if on else TEXT)
+                c["frame"].itemconfigure(r, fill=BLUE if on else "#3a3a3a")
+                c["frame"].itemconfigure(t, fill="#0b1a2b" if on else TEXT)
             if c["x"] is not None:
-                if k in want:
-                    c["x"].pack(side="right")
-                else:
-                    c["x"].pack_forget()
+                for item in c["x"]:
+                    c["frame"].itemconfigure(item, state="normal" if k in want else "hidden")
 
     # --- editing (saved straight away; the bot reads it on its next builder check) ---
     def add(self, key, to):
@@ -3999,6 +4187,11 @@ class App(tk.Tk):
         self.loot_tree = self._tree(lc, ("Account", "Gold", "Gold/hr", "Elixir", "Elixir/hr", "Dark", "Dark/hr", "Att."),
                                     (84, 56, 58, 56, 62, 46, 56, 34), 4)
         self.loot_tree.pack(fill="both", expand=True)
+        mc = self.card(side, "Time to max (this hall, builders only)", row=2, column=0, pady=S(0, 12))
+        self.max_tree = self._tree(mc, ("Account", "Village", "Hall", "Upgrades", "Builder time", "Days"),
+                                   (84, 70, 40, 64, 84, 56), 4)
+        self.max_tree.pack(fill="both", expand=True)
+        self.render_max()
         act = self.card(tab, "Activity", row=2, column=0, padx=S(0, 6), pady=S(12, 0))
         self.mini_log = self.text_widget(act, 5)
         self.mini_log.pack(fill="both", expand=True)
@@ -4073,17 +4266,6 @@ class App(tk.Tk):
         ttk.Button(row, text="Set spell line", command=lambda: self.with_screenshot(lambda f: DropLinePicker(
             self, f, ("spell_point", "spell_line_end"), "Spell"))).pack(side="left")
 
-        c = self.card(lcol, "Deploy order", row=1, column=0)
-        self.unit_tree = self._tree(c, ("Unit", "Taps", "Status"), (200, 70, 110), 5)
-        self.unit_tree.pack(fill="x")
-        self.unit_tree.bind("<Double-1>", lambda e: self.edit_unit())
-        row = ttk.Frame(c, style="Card.TFrame")
-        row.pack(fill="x", pady=S(10, 0))
-        ttk.Button(row, text="Add unit", style="Accent.TButton", command=self.add_unit).pack(side="left")
-        ttk.Button(row, text="Edit taps", command=self.edit_unit).pack(side="left", padx=S(8))
-        ttk.Button(row, text="↑", width=3, command=lambda: self.move_unit(-1)).pack(side="left")
-        ttk.Button(row, text="↓", width=3, command=lambda: self.move_unit(1)).pack(side="left", padx=S(4, 8))
-        ttk.Button(row, text="Remove", command=self.remove_unit).pack(side="left")
 
     def _scroll_area(self, parent):
         canvas = tk.Canvas(parent, highlightthickness=0, bg=BG)
@@ -4189,6 +4371,7 @@ class App(tk.Tk):
                 elif kind == "call":
                     data()
                 elif kind == "scan":
+                    self.render_max()
                     p = getattr(self, "planner", None)
                     if p is not None and p.winfo_exists():
                         p.refresh()
@@ -4305,8 +4488,6 @@ class App(tk.Tk):
         miss += [f"Text region: {d}" for n, d in OCR_REGIONS if n in need and n not in c["ocr_regions"]]
         if "deploy_point" not in c["fixed_points"]:
             miss.append("Screen point: troop drop point")
-        if not c["deploy_units"] and not c["auto_deploy"]:
-            miss.append("At least one deploy unit (or turn on auto-deploy)")
         return miss
 
     def toggle(self, mode="farm"):
@@ -4326,6 +4507,10 @@ class App(tk.Tk):
         self.thread = threading.Thread(target=self.bot.run, daemon=True)
         self.thread.start()
         self.started_at = time.time()
+        if self.public_url:  # the start-up post can be missed (PC asleep, network not up yet): send it again
+            url = self.public_url
+            pc = os.environ.get("COMPUTERNAME", "a PC")
+            self.bg(lambda: post_discord(self.cfg, f"▶️ Farming started on **{pc}**\n{url}"))
         mine.config(text="■  Stop farming" if mode == "farm" else "■  Stop looting")
         other.config(state="disabled")
 
@@ -4343,6 +4528,25 @@ class App(tk.Tk):
         self.loot_tree.delete(*self.loot_tree.get_children())
         for row in self.loot_view:
             self.loot_tree.insert("", "end", values=row)
+
+    def render_max(self):
+        """Per account + village: upgrade time left to max this hall, and the calendar days that is with every
+        builder kept busy (no boosts / Builder Potions)."""
+        self.max_tree.delete(*self.max_tree.get_children())
+        tagged = set((self.cfg.get("account_tags") or {}).values())
+        for acc, bases in sorted((self.cfg.get("scans") or {}).items()):
+            if tagged and acc not in tagged and difflib.get_close_matches(acc, tagged, 1, 0.75):
+                continue  # a misread name of a known account
+            for base in ("home", "builder"):
+                sd = bases.get(base)
+                if not sd:
+                    continue
+                secs, n, builders = time_to_max(sd, base)
+                days = secs / 86400
+                self.max_tree.insert("", "end", values=(
+                    acc, "Home" if base == "home" else "Builder", sd.get("hall") or "?", n,
+                    f"{days:,.0f} d" if days >= 2 else f"{secs / 3600:,.0f} h",
+                    f"{days / builders:,.1f}" if n else "✓ max"))
 
     def reset_dashboard(self):
         for k, lbl in self.stat_labels.items():
@@ -4549,7 +4753,7 @@ class App(tk.Tk):
 
     # --- setup tab ---
     def refresh_setup(self):
-        for t in (self.btn_tree, self.ocr_tree, self.pt_tree, self.unit_tree):
+        for t in (self.btn_tree, self.ocr_tree, self.pt_tree):
             keep = {i: t.set(i) for i in t.get_children()}
             t.delete(*t.get_children())
             t.keep = keep
@@ -4568,11 +4772,6 @@ class App(tk.Tk):
             p = self.cfg["fixed_points"].get(n)
             self.pt_tree.insert("", "end", iid=n, tags=("ok" if p else "optional",),
                                 values=(d, f"({p[0]}, {p[1]})" if p else "—  Not set"))
-        for i, u in enumerate(self.cfg["deploy_units"]):
-            ok = os.path.exists(tpath(u["name"]))
-            self.unit_tree.insert("", "end", iid=str(i), tags=("ok" if ok else "missing",),
-                                  values=(f"{i + 1}.  {u['name']}", u.get("taps", 1),
-                                          "✓ Ready" if ok else "✗ No image"))
 
     def selected(self, tree, what):
         sel = tree.selection()
@@ -4658,59 +4857,6 @@ class App(tk.Tk):
         save_config(self.cfg)
         self.log(f"Saved point '{n}' at {center}.", "ok")
         self.refresh_setup()
-
-    def _ask_taps(self, initial=1):
-        return simpledialog.askinteger("Taps", "How many to deploy?\n(e.g. 40 for 40 barbarians, 1 for a hero)",
-                                       initialvalue=initial, minvalue=1, maxvalue=300, parent=self)
-
-    def add_unit(self):
-        taps = self._ask_taps()
-        if not taps:
-            return
-        used = {u["name"] for u in self.cfg["deploy_units"]}
-        name = next(f"deploy_unit_{i}" for i in range(1, 999) if f"deploy_unit_{i}" not in used)
-
-        def save(img, _c, _b):
-            cv2.imwrite(tpath(name), img)
-            self.cfg["deploy_units"].append({"name": name, "taps": taps})
-            save_config(self.cfg)
-            self.log(f"Added {name} x{taps}.", "ok")
-            self.refresh_setup()
-        self.with_screenshot(lambda f: CaptureWindow(self, f, "Start an attack, then drag a box around the "
-                                                              "unit's icon on the troop bar", save))
-
-    def edit_unit(self):
-        i = self.selected(self.unit_tree, "unit")
-        if i is None:
-            return
-        u = self.cfg["deploy_units"][int(i)]
-        taps = self._ask_taps(u.get("taps", 1))
-        if taps:
-            u["taps"] = taps
-            save_config(self.cfg)
-            self.refresh_setup()
-            self.unit_tree.selection_set(i)
-
-    def move_unit(self, d):
-        i = self.selected(self.unit_tree, "unit")
-        units = self.cfg["deploy_units"]
-        if i is None or not 0 <= int(i) + d < len(units):
-            return
-        i = int(i)
-        units[i], units[i + d] = units[i + d], units[i]
-        save_config(self.cfg)
-        self.refresh_setup()
-        self.unit_tree.selection_set(str(i + d))
-
-    def remove_unit(self):
-        i = self.selected(self.unit_tree, "unit")
-        if i is None:
-            return
-        u = self.cfg["deploy_units"][int(i)]
-        if messagebox.askyesno("Remove unit", f"Remove {u['name']} from the deploy order?"):
-            self.cfg["deploy_units"].pop(int(i))
-            save_config(self.cfg)
-            self.refresh_setup()
 
     def preview_screen(self):
         def show(frame):
@@ -4863,6 +5009,14 @@ def selftest():
     red = grey.copy()
     red[:, :] = (30, 30, 220)
     assert icon_empty(grey, 30, 30) and not icon_empty(red, 30, 30), "grey slot detection"
+
+    # the game's data export: ids -> buildings, upgrading = next level, supercharged copies merged
+    ex = export_items({"buildings": [{"data": 1000013, "lvl": 17, "timer": 5}, {"data": 1000002, "lvl": 17, "cnt": 2},
+                                     {"data": 1000002, "lvl": 17, "cnt": 4, "supercharge": 1}, {"data": 1000010, "lvl": 9}],
+                       "heroes2": [{"data": 28000003, "lvl": 35}]})
+    assert sorted((r["key"], r["level"], r["count"], r["upgrading"]) for r in ex["home"]) == [
+        ("home:elixir collector", 17, 6, False), ("home:mortar", 18, 1, True)], ex
+    assert [(r["key"], r["level"]) for r in ex["builder"]] == [("builder:battle machine", 35)], ex
 
     if HAVE_TESS and os.path.exists(DEFAULTS["tesseract_path"]):
         pytesseract.pytesseract.tesseract_cmd = DEFAULTS["tesseract_path"]
