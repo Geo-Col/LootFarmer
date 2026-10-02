@@ -72,8 +72,8 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 17  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
-UPDATE_REPO = "Geo-Col/LootFarmer"
+APP_VERSION = 18  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+UPDATE_REPO = "Geo-Col/lf-app"  # was Geo-Col/LootFarmer (GitHub redirects the old name)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
@@ -4169,6 +4169,7 @@ class App(tk.Tk):
         self.q.put(("call", fn))
 
     def log(self, msg, level="info"):
+        getattr(log_file, {"ok": "info", "warn": "warning", "err": "error"}.get(level, "info"))(msg)  # in reports too
         self.emit("log", (level, msg))
 
     def _styles(self):
@@ -4610,13 +4611,32 @@ class App(tk.Tk):
             new = f"{url}/?k={self.cfg['phone_view_key']}"
             if new != self.public_url:
                 self.log(f"Anywhere link ready: {new}", "ok")
-                self.bg(lambda: post_discord(self.cfg, f"🟢 **Loot Farmer v{APP_VERSION}** is running on "
-                                                       f"**{os.environ.get('COMPUTERNAME', 'a PC')}**\n{new}"))
+                self.announce(f"🟢 **Loot Farmer v{APP_VERSION}** is running on "
+                              f"**{os.environ.get('COMPUTERNAME', 'a PC')}**\n{new}")
             self.public_url = new
             self.public_label.config(text="🌍  Anywhere link  (click to copy)", foreground=BLUE)
         else:
             self.public_url = ""
             self.public_label.config(text="🌍  Anywhere link: reconnecting…", foreground=AMBER)
+
+    def announce(self, text):
+        """Post the link to Discord and keep at it - every minute for up to an hour (PC just woke up, network or
+        Discord down...) - saying in the log whether it got there. A newer message replaces one still waiting."""
+        self._announce_id = getattr(self, "_announce_id", 0) + 1
+        my = self._announce_id
+
+        def work():
+            for i in range(60):
+                if my != self._announce_id:
+                    return  # superseded by a newer link / start message
+                if post_discord(self.cfg, text):
+                    return self.log("Anywhere link sent to Discord.", "ok")
+                if i == 0:
+                    self.log("Couldn't reach Discord to send the Anywhere link - retrying every minute.", "warn")
+                time.sleep(60)
+            self.log("Gave up sending the Anywhere link to Discord after an hour (check the webhook in Settings).",
+                     "warn")
+        threading.Thread(target=work, daemon=True).start()
 
     def _set_pill(self, ok):
         self.pill.config(text="●  Connected" if ok else "●  Offline", foreground=GREEN if ok else RED)
@@ -4679,8 +4699,7 @@ class App(tk.Tk):
         self.started_at = time.time()
         if self.public_url:  # the start-up post can be missed (PC asleep, network not up yet): send it again
             url = self.public_url
-            pc = os.environ.get("COMPUTERNAME", "a PC")
-            self.bg(lambda: post_discord(self.cfg, f"▶️ Farming started on **{pc}**\n{url}"))
+            self.announce(f"▶️ Farming started on **{os.environ.get('COMPUTERNAME', 'a PC')}**\n{url}")
         for m, (btn, _) in self.mode_buttons().items():
             if m == mode:
                 btn.config(text={"farm": "■  Stop farming", "loot": "■  Stop looting", "walls": "■  Stop walls"}[m])
