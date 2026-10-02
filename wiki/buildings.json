@@ -11650,5 +11650,168 @@
 "ids": [
 1000036
 ]
+},
+"home:wall": {
+"name": "Wall",
+"base": "home",
+"page": "Wall",
+"icon": "icons/home_wall.png",
+"levels": [
+{
+"level": 1,
+"cost": 0,
+"req": 2,
+"time": 0,
+"res": "gold",
+"hall": "town hall"
+},
+{
+"level": 2,
+"cost": 1000,
+"req": 2,
+"time": 0,
+"res": "gold",
+"hall": "town hall"
+},
+{
+"level": 3,
+"cost": 5000,
+"req": 3,
+"time": 0,
+"res": "gold",
+"hall": "town hall"
+},
+{
+"level": 4,
+"cost": 10000,
+"req": 4,
+"time": 0,
+"res": "gold",
+"hall": "town hall"
+},
+{
+"level": 5,
+"cost": 20000,
+"req": 5,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 6,
+"cost": 30000,
+"req": 6,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 7,
+"cost": 50000,
+"req": 7,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 8,
+"cost": 75000,
+"req": 8,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 9,
+"cost": 100000,
+"req": 9,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 10,
+"cost": 200000,
+"req": 9,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 11,
+"cost": 500000,
+"req": 10,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 12,
+"cost": 1000000,
+"req": 11,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 13,
+"cost": 1500000,
+"req": 12,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 14,
+"cost": 2000000,
+"req": 13,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 15,
+"cost": 3000000,
+"req": 14,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 16,
+"cost": 4000000,
+"req": 15,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 17,
+"cost": 5000000,
+"req": 16,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 18,
+"cost": 7000000,
+"req": 17,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+},
+{
+"level": 19,
+"cost": 10000000,
+"req": 18,
+"time": 0,
+"res": "any",
+"hall": "town hall"
+}
+],
+"ids": [
+1000010
+]
 }
 }

@@ -72,9 +72,9 @@ STEP 5 - Start farming
 
 PHONE VIEW
 ----------
-Under the title there are two links - click one to copy it, then send it to
-yourself. "Home Wi-Fi link" works on the same Wi-Fi; "Anywhere link" works
-from anywhere and stays the same until the PC restarts. Windows may ask to
+Click "Anywhere link" under the title to copy it, then open it on your phone.
+It works from anywhere (Wi-Fi or mobile data), is posted to Discord when the
+app starts, and stays the same until the PC restarts. Windows may ask to
 let Python use the network the first time - click "Allow".
 
 

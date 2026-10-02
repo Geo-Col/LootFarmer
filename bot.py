@@ -32,8 +32,11 @@ def _ensure(pkgs):
 _ensure({"cv2": "opencv-python", "PIL": "Pillow", "numpy": "numpy", "sv_ttk": "sv-ttk",
          "pytesseract": "pytesseract"})
 
+import base64
 import collections
+import ctypes
 import difflib
+import hashlib
 import http.server
 import json
 import logging
@@ -43,13 +46,16 @@ import queue
 import re
 import secrets
 import shutil
-import socket
 import struct
 import tempfile
 import threading
 import time
 import traceback
 import tkinter as tk
+import tkinter.font as tkfont
+import urllib.error
+import urllib.request
+import zipfile
 from tkinter import messagebox, ttk
 
 import cv2
@@ -66,7 +72,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 16  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 17  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/LootFarmer"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -130,8 +136,6 @@ POINTS = [
     ("deploy_line_end", "Troop line end (same side of the base)"),
     ("spell_point", "Spell line start (optional)"),
     ("spell_line_end", "Spell line end (optional)"),
-    ("list_scroll_start", "Builder list swipe start"),
-    ("list_scroll_end", "Builder list swipe end"),
 ]
 # Checked in this order; first template above the confidence wins. Overlays
 # and more specific screens come before the screens they sit on top of
@@ -226,7 +230,7 @@ DEFAULTS = {
     "fixed_points": {},
 }
 
-# (group, blurb, [(key, label, type)]) - type: bool/int/float/str/"secret"
+# (group, blurb, [(key, label, type)]) - type: bool/int/float/str/"secret", or a tuple of choices (dropdown)
 SETTINGS = [
     ("Loot", "Which bases are worth attacking.", [
         ("loot_force_attack", "Attack every base (skip loot check)", bool),
@@ -239,7 +243,7 @@ SETTINGS = [
     ]),
     ("Battle", "Deploying and surrendering.", [
         ("deploy_spells", "Also drop spells at the drop point", bool),
-        ("deploy_pan", "Pan view before deploying (top-left/top-right/bottom-left/bottom-right/off)", str),
+        ("deploy_pan", "Camera corner before deploying", ("top-left", "top-right", "bottom-left", "bottom-right", "off")),
         ("hero_abilities", "Use hero abilities", bool),
         ("hero_ability_delay", "Use abilities this long after deploying (s)", float),
         ("hold_deploy", "Hold-to-deploy (single drop spot only)", bool),
@@ -309,7 +313,15 @@ SETTINGS = [
     ]),
 ]
 
-RUNTIME_KEYS = ("scans", "plans", "account_tags", "_last_account_idx")  # saved by the bot, not settings
+RUNTIME_KEYS = ("scans", "plans", "account_tags", "_last_account_idx", "loot_rate", "line_view")  # saved by the bot, not settings
+# Rarely-touched tuning: shown under 'Show advanced settings'
+ADVANCED = {"loot_settle_delay", "loot_recheck_delay", "loot_max_plausible", "hold_deploy", "damage_confirm_count",
+            "timer_poll_interval", "hold_ms_per_troop", "deploy_select_delay", "deploy_tap_delay",
+            "bank_scroll_duration_ms", "bank_scroll_delay", "bank_post_spend_delay", "gfx_profile",
+            "emulator_launch_args", "coc_package_name", "coc_activity_name", "watchdog_attack_timeout",
+            "game_launch_wait", "emulator_boot_wait", "adb_ready_timeout", "match_confidence",
+            "min_screenshot_interval", "tap_delay", "ocr_region_padding_px", "ocr_min_digits", "tesseract_path",
+            "phone_view_port", "adb_path", "auto_connect_target", "groq_model"}
 _cfg_lock = threading.Lock()
 
 
@@ -671,7 +683,6 @@ def groq_ask(cfg, frame, prompt, max_tokens=250):
         from groq import Groq
     except ImportError:
         return None
-    import base64
     h = int(frame.shape[0] * GROQ_W / frame.shape[1])
     img = cv2.resize(frame, (GROQ_W, h), interpolation=cv2.INTER_AREA)
     try:
@@ -973,7 +984,6 @@ def norm_name(s):
 
 def name_match(a, b):
     """Fuzzy: OCR turns Longshot into 'Lonashot&' and Storage into 'Storaae'."""
-    import difflib
     a, b = (re.sub(r"^new ", "", norm_name(x)) for x in (a, b))  # the lab list tags fresh items 'New'
     if not a or not b:
         return False
@@ -1020,7 +1030,6 @@ def wiki_key(name, base):
     """'home:cannon' for an OCR'd list name like 'Cannon x4' (fuzzy), or None."""
     k = (norm_name(name), base)
     if k not in _WIKI:
-        import difflib
         hits = [key for key, v in wiki_data().items() if v["base"] == base and name_match(k[0], key.split(":", 1)[1])]
         # several fuzzy hits ('Giaa Bomb': Giga Bomb / Giant Bomb): the closest one
         _WIKI[k] = max(hits, key=lambda key: difflib.SequenceMatcher(None, k[0], key.split(":", 1)[1]).ratio(),
@@ -1084,7 +1093,7 @@ def time_to_max(sd, base):
     hall, hero = sd.get("hall"), sd.get("hero_hall")
     total = n = 0
     for r in sd.get("items", []):
-        e = wiki_data().get(r.get("key"))
+        e = wiki_data().get(r.get("key")) if r.get("key") != "home:wall" else None  # walls: their own card
         mx = max_level(r["key"], hall, hero) if e else None
         if mx is None or r.get("level") is None:
             continue
@@ -1094,6 +1103,21 @@ def time_to_max(sd, base):
                 n += r.get("count", 1)
     huts = sum(r.get("count", 1) for r in sd.get("items", []) if r.get("key") == "home:builders hut")
     return total, n, (huts or 5) if base == "home" else 3  # Builder Base: its top bar shows x/3
+
+
+def walls_left(sd):
+    """Home walls from a planner scan: ({level: count}, max level at this Town Hall, walls below it, gold/elixir
+    needed to bring every one of them to max - each wall priced level by level from where it is now)."""
+    e = wiki_data().get("home:wall")
+    mx = max_level("home:wall", sd.get("hall")) if e else None
+    counts, todo, cost = {}, 0, 0
+    for r in sd.get("items", []):
+        if r.get("key") == "home:wall" and r.get("level") is not None:
+            counts[r["level"]] = counts.get(r["level"], 0) + r.get("count", 1)
+            if mx and r["level"] < mx:
+                todo += r.get("count", 1)
+                cost += r.get("count", 1) * sum(x["cost"] for x in e["levels"] if r["level"] < x["level"] <= mx)
+    return counts, mx, todo, cost
 
 
 def read_clipboard():
@@ -1231,7 +1255,7 @@ class Abort(Exception):
 
 class Bot:
     def __init__(self, cfg, adb, emit, mode="farm"):
-        self.cfg, self.adb, self.emit, self.mode = cfg, adb, emit, mode  # "farm", or "loot" = attack only
+        self.cfg, self.adb, self.emit, self.mode = cfg, adb, emit, mode  # "farm", "loot" (attack only), "walls"
         self.stop_evt = threading.Event()
         self.v = Vision()
         self.stats = dict(attacks=0, skipped=0, walls=0, upgrades=0, switches=0, recoveries=0, errors=0)
@@ -1245,6 +1269,7 @@ class Bot:
         self.loot = {}        # account -> [gold, elixir, dark, attacks] farmed this session
         self._names = list(dict.fromkeys((cfg.get("account_tags") or {}).values()))  # misreads snap to these
         self._saving_home = None  # account farming for its next home plan target: no Builder Base trips meanwhile
+        self._view = None  # background zoom + pan for the base being scouted
         self._last_name = None
         self._cur = self._pre = None  # (account, (gold, elixir, dark)) now / just before the attack
         self._switch_streak = 0
@@ -1389,7 +1414,6 @@ class Bot:
     # --- screen handlers ---
     def account_name(self, frame):
         """Player name at the top-left of the home screen (e.g. 'GeoCol3'), snapped to names already seen."""
-        import difflib
         k = frame.shape[1] / 1920
         c = frame[int(8 * k):int(52 * k), int(140 * k):int(520 * k)]
         hsv = cv2.cvtColor(c, cv2.COLOR_BGR2HSV)
@@ -1452,8 +1476,20 @@ class Bot:
 
     def on_home(self, frame, prev):
         self.game_relaunches = 0
+        self._view = None
         storage = self.track_loot(frame, self.read_storage(frame))
         if self.mode == "loot":  # Loot only: no upgrades, walls or account switching - just attack
+            return self.attack_now()
+        if self.mode == "walls":  # Walls only: farm, and every time the next wall level is affordable, buy it
+            if self.maybe_rescan("builder", hours=1):  # keeps the dashboard's wall count current
+                return
+            price = self.wall_price()
+            if price == 0:
+                self.log("Every wall is max for this Town Hall - nothing left to buy. Stopping.", "ok")
+                self.stop_evt.set()
+                raise Abort()
+            if self.spend_bank(storage, price):
+                return
             return self.attack_now()
         for kind in ("builder", "lab"):
             if self.cfg[f"{kind}_upgrades_enabled"] and time.time() >= self._upgrade_backoff.get(kind, 0):
@@ -1513,8 +1549,22 @@ class Bot:
         self.log("Found a battle in progress - watching damage.")
         self.finish_battle()
 
+    def start_view(self):
+        """Zoom fully out + pan to the drop corner in the background while the loot is read, so the deploy can
+        start straight away (it took ~6 s at deploy time). The adb shell is locked: a Next tap simply waits."""
+        if self._view is None and self.cfg.get("deploy_pan", "off") in PAN_DIRS:
+            def work():
+                try:
+                    zoom_out(self.adb, times=2)  # two pinches reach the limit from any zoom (measured)
+                    pan_view(self.adb, self.cfg["deploy_pan"])
+                except Exception as e:
+                    log_file.info(f"view prep: {e}")
+            self._view = threading.Thread(target=work, daemon=True)
+            self._view.start()
+
     def on_scout(self, frame, prev):
         c = self.cfg
+        self.start_view()
         if c["loot_force_attack"]:
             return self.attack(None, None)
         if prev != "SCOUT":  # loot numbers count up as the base loads
@@ -1544,6 +1594,9 @@ class Bot:
         hit = self.find(self.shot(), "next_button") or self.hits.get("next_button")
         if hit:
             self.bump("skipped")
+            if self._view:
+                self._view.join(15)
+            self._view = None  # the next base gets its own zoom + pan
             self.tap(hit, c["loot_recheck_delay"])
 
     # --- Groq (AI vision) ---
@@ -1655,11 +1708,15 @@ class Bot:
     def deploy(self):
         c = self.cfg
         self._ability_cards = []
-        if c.get("deploy_pan", "off") in PAN_DIRS:  # each account/village keeps its own zoom: zoom fully out
-            zoom_out(self.adb)                    # first, so the pan lands on the same view every time
-        pan_view(self.adb, c.get("deploy_pan", "off"))
-        self.sleep(0.5)
+        if self._view:  # zoomed out + panned while scouting (normally done by now)
+            self._view.join(15)
+        elif c.get("deploy_pan", "off") in PAN_DIRS:  # each account/village keeps its own zoom: zoom fully out
+            zoom_out(self.adb, times=2)             # first, so the pan lands on the same view every time
+            pan_view(self.adb, c["deploy_pan"])
+        self._view = None
+        self.sleep(0.3)
         a, b = self.line()
+        bar = None
         try:  # what the bot saw + where it will drop: send this file if placement looks wrong
             dbg = self.shot().copy()
             bar = troop_bar(dbg)
@@ -1673,7 +1730,7 @@ class Bot:
             cv2.imwrite(os.path.join(BASE_DIR, "debug_deploy.png"), dbg)
         except Exception as e:
             log_file.info(f"debug_deploy.png: {e}")
-        if not self.auto_deploy(a, b):
+        if not self.auto_deploy(a, b, bar):
             self.log("Couldn't read the troop bar - no troops deployed (see debug_deploy.png).", "err")
 
     def finish_battle(self):
@@ -1745,11 +1802,55 @@ class Bot:
         return True
 
     # --- walls ---
-    def spend_bank(self, storage):
+    def walls_progress(self, paid):
+        """Walls just bought: move that many of the lowest walls up a level in this account's scan, so the
+        dashboard's Walls card is current without waiting for the next export (price / one wall = how many)."""
+        sd = ((self.cfg.get("scans") or {}).get(self._last_name) or {}).get("home") or {}
+        counts, mx, todo, _ = walls_left(sd)
+        low = min((lv for lv in counts if mx and lv < mx), default=None)
+        if low is None or not paid:
+            return
+        n = min(counts[low], max(1, round(paid / wiki_data()["home:wall"]["levels"][low]["cost"])))
+        rows = [r for r in sd["items"] if r.get("key") == "home:wall"]
+        for r in rows:
+            if r["level"] == low:
+                r["count"] -= n
+                break
+        up = next((r for r in rows if r["level"] == low + 1), None)
+        if up:
+            up["count"] += n
+        else:
+            sd["items"].append({"key": "home:wall", "name": "Wall", "level": low + 1, "count": n, "upgrading": False})
+        sd["items"] = [r for r in sd["items"] if r.get("count", 1) > 0]
+        save_config(self.cfg)
+        self.emit("scan", self._last_name)
+
+    def wall_price(self):
+        """Cost of the next wall upgrade (the lowest wall that isn't max), 0 if every wall is max, None if this
+        account's walls haven't been scanned."""
+        sd = ((self.cfg.get("scans") or {}).get(self._last_name) or {}).get("home") or {}
+        counts, mx, todo, _ = walls_left(sd)
+        if not counts or not mx:
+            return None
+        if not todo:
+            return 0
+        return wiki_data()["home:wall"]["levels"][min(lv for lv in counts if lv < mx)]["cost"]
+
+    def spend_bank(self, storage, threshold=None):
+        thr = threshold or self.cfg["bank_spend_threshold"]
+        if not any((storage.get(c) or 0) >= thr for c in ("gold", "elixir")):
+            return False
+        if time.time() < self._bank_backoff.get("builder", 0):
+            return False
+        if self.free_slots(self.shot(), "builder") == 0:  # walls are instant but still need a free builder
+            self._bank_backoff["builder"] = time.time() + 600
+            self.log("Walls: every builder is busy (the game needs a free one even for walls) - farming on, "
+                     "checking again in 10 min.")
+            return False
         did = False
         for cur in ("gold", "elixir"):
             val = storage.get(cur)
-            if val is None or val < self.cfg["bank_spend_threshold"]:
+            if val is None or val < (threshold or self.cfg["bank_spend_threshold"]):
                 continue
             if time.time() < self._bank_backoff.get(cur, 0):
                 continue
@@ -1759,27 +1860,21 @@ class Bot:
                 self.log(f"{cur.title()} read {val:,} then {again} - not sure, skipping this time.", "warn")
                 continue
             did = True
-            if not self.buy_wall(cur, val):
+            if self.buy_wall(cur, val):
+                self.walls_progress(getattr(self, "_wall_paid", 0))
+            else:
                 self._bank_backoff[cur] = time.time() + 300
                 self.log(f"Couldn't buy a {cur} wall - trying again in 5 min.", "warn")
         return did
 
-    def scroll_list(self):
-        p = self.cfg["fixed_points"]
-        s, e = p.get("list_scroll_start"), p.get("list_scroll_end")
-        if not s or not e or abs(s[1] - e[1]) < 100:  # too short a drag registers as a tap
-            x, y = s or (960, 540)
-            s, e = (x, y + 200), (x, y - 200)
-        self.adb.swipe(s[0], s[1], e[0], e[1], self.cfg["bank_scroll_duration_ms"])
-        self.sleep(self.cfg["bank_scroll_delay"])
-
     def find_wall_rows(self, frame):
-        """'Wall' rows in the builder list, via Tesseract word search (clean white-on-dark text)."""
-        if not HAVE_TESS:
+        """'Wall' rows in the open builder list, via Tesseract word search (clean white-on-dark text). Only inside
+        the list: a selected wall's own bar says 'Remove Wall' / 'Add Wall', and those must never be tapped."""
+        box = panel_box(frame)
+        if not HAVE_TESS or not box:
             return []
-        h, w = frame.shape[:2]
-        x0, y0 = w // 4, h // 12
-        gray = cv2.cvtColor(frame[y0:h * 7 // 8, x0:w * 3 // 4], cv2.COLOR_BGR2GRAY)
+        x0, x1, y0, y1 = box
+        gray = cv2.cvtColor(frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
         try:
             d = pytesseract.image_to_data(gray, config="--psm 11", output_type=pytesseract.Output.DICT, timeout=8)
         except Exception:
@@ -1840,11 +1935,15 @@ class Bot:
                 rows = self.find_wall_rows(frame)
                 if rows:
                     break
+                box = panel_box(frame)
+                if not box:  # not open (yet): never swipe then - it would drag the village (onto the boat...)
+                    self.sleep(0.6)
+                    continue
                 roi = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[150:-150:4, ::4]
                 if prev is not None and cv2.absdiff(roi, prev).mean() < 2:
                     break  # list stopped moving: reached the bottom
                 prev = roi
-                self.scroll_list()
+                self.scroll_panel(box)  # inside the list only
         if not rows:
             return None
         for _ in range(6):  # wait until two reads agree on where the row is (the list glides after a swipe)
@@ -1858,6 +1957,11 @@ class Bot:
         f = self.shot()
         if panel_box(f):  # the list sometimes stays open over the buttons: its icon closes it
             self.tap(icon, 1.2)
+        name = self.selected_label(self.shot())[0]
+        other = wiki_key(name, "home") if name else None  # only walls have Upgrade More - this just catches a
+        if other and other != "home:wall":                # clearly different building ('Cannon (Level 21)')
+            self.log(f"Wall upgrade: the tap selected '{name}', not a wall.", "warn")
+            return None
         end = time.time() + 3  # only walls have 'Upgrade More' (greyed/red when it's the only wall of its level)
         while True:
             f = self.shot()
@@ -1876,7 +1980,8 @@ class Bot:
         if balance is None and region:
             balance = white_number(frame, region)
         for attempt in range(3):  # a slid list can land the tap on the wrong building: just try again
-            more = "open" if self.upgrade_pair(frame) else self.select_wall()
+            # always a fresh pick from the list: a bar left from the last purchase holds walls a level higher now
+            more = self.select_wall()
             if more:
                 break
             self.log(f"Wall upgrade: didn't get a wall selected (attempt {attempt + 1}/3) - retrying.")
@@ -1946,6 +2051,7 @@ class Bot:
             return self.wall_fail(f"{cur} didn't drop ({balance:,} -> {after:,}), so it didn't go through",
                                   self.shot())
         self.bump("walls")
+        self._wall_paid = price
         self.log(f"Bought a wall upgrade for {price:,} {cur}"
                  + (f" ({balance:,} -> {after:,})." if balance is not None and after is not None else "."), "ok")
         return True  # the wall bar left open doesn't block Attack
@@ -1955,18 +2061,22 @@ class Bot:
         return self.find(f, "attack_button") or self.find(f, "bb_attack_button")
 
     def matches(self, frame, name, conf=0.8):
-        """Every place a (small) template shows, e.g. all collector bubbles."""
+        """Every place a (small) template shows, e.g. all collector bubbles - at the zoom levels a village is
+        seen at (the boat trip leaves the Builder Base a little zoomed out: bubbles ~0.9x)."""
         t = self.v.template(name)
         if t is None:
             return []
         small = cv2.resize(frame, None, fx=SCALE, fy=SCALE, interpolation=cv2.INTER_AREA)
-        r = cv2.matchTemplate(small, t[2], cv2.TM_CCOEFF_NORMED)
-        h, w = t[1]
+        hits = []
+        for z in (1.0, 0.92, 0.85):
+            tt = cv2.resize(t[2], None, fx=z, fy=z, interpolation=cv2.INTER_AREA)
+            r = cv2.matchTemplate(small, tt, cv2.TM_CCOEFF_NORMED)
+            hits += [(r[y, x], int((x + tt.shape[1] / 2) / SCALE), int((y + tt.shape[0] / 2) / SCALE))
+                     for y, x in zip(*np.where(r >= conf))]
         out = []
-        for y, x in sorted(zip(*np.where(r >= conf)), key=lambda p: -r[p]):
-            xy = (int(x / SCALE + w / 2), int(y / SCALE + h / 2))
-            if all(abs(xy[0] - a) > 30 or abs(xy[1] - b) > 30 for a, b in out):
-                out.append(xy)
+        for _, x, y in sorted(hits, reverse=True):
+            if all(abs(x - a) > 30 or abs(y - b) > 30 for a, b in out):
+                out.append((x, y))
         return out
 
     def find_any_zoom(self, frame, name, conf=0.75):
@@ -1977,7 +2087,7 @@ class Bot:
             return None
         small = cv2.resize(frame, None, fx=SCALE, fy=SCALE, interpolation=cv2.INTER_AREA)
         best = (0, None)
-        for z in (1.0, 0.85, 0.72, 0.62, 1.15):
+        for z in (1.0, 0.92, 0.85, 0.72, 0.62, 1.15):
             tt = cv2.resize(t[2], None, fx=z, fy=z, interpolation=cv2.INTER_AREA)
             if tt.shape[0] > small.shape[0] or tt.shape[1] > small.shape[1] or min(tt.shape[:2]) < 6:
                 continue
@@ -2054,7 +2164,7 @@ class Bot:
     def bb_clock_boost(self):
         """The Clock Tower's free boost (everything 10x faster for ~30 min, free once per 22h). Its bubble only
         shows when it's ready; only a button that says 'Free Boost!' is pressed - never the gem one."""
-        bub = self.find(self.shot(), "bb_clock_bubble")
+        bub = self.find_any_zoom(self.shot(), "bb_clock_bubble", 0.8)
         if not bub:
             return
         self.tap(bub, 1.5)
@@ -2837,14 +2947,16 @@ class Bot:
             return
         pts = [self.along(a, b, k, n) for k in range(n)]
         gap = max(0.0, c["deploy_tap_delay"])
+        if fast_taps(self.adb, pts):
+            return
         for i in range(0, n, 20):  # one shell call per 20 taps - fast, no round trip per troop
             chunk = pts[i:i + 20]
             self.adb.shell(f"; sleep {gap}; ".join(f"input tap {x} {y}" for x, y in chunk), timeout=10 + len(chunk))
 
-    def auto_deploy(self, a, b):
+    def auto_deploy(self, a, b, cards=None):
         """Read this account's troop bar and deploy it: spells first (if enabled), then every troop card (all of
         it), then every hero / siege machine / pet (one tap each)."""
-        cards = troop_bar(self.shot())
+        cards = cards or troop_bar(self.shot())  # the deploy's debug read, when there was one
         troops = [cd for cd in cards if cd[2] == "troop" and cd[3]]
         spells = [cd for cd in cards if cd[2] == "spell" and cd[3]] if self.cfg["deploy_spells"] else []
         singles = [cd for cd in cards if cd[2] == "single"]
@@ -2863,9 +2975,10 @@ class Bot:
             self.tap((x, y), delay)
             self.drop(a, b, n, (x, y))
         for k, (x, y, _, _) in enumerate(singles):  # heroes / siege spread evenly along the same line
-            self.tap((x, y), delay)
-            self.adb.tap(*self.along(a, b, k, len(singles)))
-            self.sleep(0.3)
+            if not fast_taps(self.adb, [(x, y)]) or not fast_taps(self.adb, [self.along(a, b, k, len(singles))]):
+                self.tap((x, y), delay)
+                self.adb.tap(*self.along(a, b, k, len(singles)))
+            self.sleep(0.1)
         self._ability_cards = [(x, y) for x, y, _, _ in singles]  # tapping a deployed hero's card = its ability
         self.log(f"Auto-deployed {sum(cd[3] for cd in troops)} troops ({len(troops)} types), "
                  f"{len(singles)} heroes/siege" + (f", {len(spells)} spell types." if spells else "."))
@@ -3022,7 +3135,7 @@ class Bot:
 
 
 # ---------------------------------------------------------------------------
-# Phone view: read-only web page (live screen + stats) for any browser on the same Wi-Fi
+# Phone view: read-only web page (live screen + stats), shared through the Anywhere link
 # ---------------------------------------------------------------------------
 PHONE_PAGE = """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Loot Farmer</title><style>
@@ -3086,7 +3199,6 @@ class PhoneView:
 
 def _pid_image(pid):
     """Full exe path of a running process, or None if it isn't running (Windows)."""
-    import ctypes
     k32 = ctypes.windll.kernel32
     h = k32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
     if not h:
@@ -3192,8 +3304,6 @@ class Tunnel:
     def _link_works(url):
         """True: our server answers through the tunnel. False: Cloudflare says it's gone (name doesn't exist /
         530). None: can't tell (no internet, VPN reconnecting...) - never a reason to throw a working link away."""
-        import urllib.error
-        import urllib.request
         host = url.split("//", 1)[-1].split("/")[0]
         try:  # ask Cloudflare's DNS directly: a lookup through Windows would cache 'no such name' for minutes
             r = json.load(urllib.request.urlopen(urllib.request.Request(
@@ -3235,10 +3345,10 @@ def pan_view(adb, where, frame_w=1920, frame_h=1080):
     if not d:
         return
     k = frame_w / 1920
-    cx, cy, dx, dy = 960 * k, 460 * k, 330 * k * d[0], 200 * k * d[1]
-    for _ in range(3):
-        adb.swipe(cx - dx, cy - dy, cx + dx, cy + dy, 450)
-        time.sleep(0.25)
+    cx, cy, dx, dy = 960 * k, 460 * k, 450 * k * d[0], 270 * k * d[1]
+    for _ in range(2):  # two long drags reach the edge (measured: same view as three short ones, in half the time)
+        adb.swipe(cx - dx, cy - dy, cx + dx, cy + dy, 300)
+        time.sleep(0.15)
 
 
 BS_CONF = r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf"
@@ -3277,8 +3387,6 @@ def process_running(exe):
 
 def post_discord(cfg, text, files=()):
     """Best effort: a failed post is logged, never raised. files: [(filename, bytes)], up to 10."""
-    import base64
-    import urllib.request
     hook = cfg.get("discord_webhook") or ""
     if not hook.startswith("http"):
         try:
@@ -3299,7 +3407,6 @@ def post_discord(cfg, text, files=()):
         body, ctype = b"".join(parts) + f"--{b}--{nl}".encode(), f"multipart/form-data; boundary={b}"
     else:
         body, ctype = payload.encode(), "application/json"
-    import urllib.error
     for i in range(5):  # at start-up the network may not be up yet; Discord rate-limits with 429 + retry_after
         try:
             req = urllib.request.Request(hook, body, method="POST",
@@ -3327,7 +3434,6 @@ def single_instance():
     Restart / Update buttons (new copy starts while the old one closes) still work. None = another is running."""
     if os.name != "nt":
         return True
-    import ctypes
     k32 = ctypes.WinDLL("kernel32", use_last_error=True)
     k32.CreateMutexW.restype = ctypes.c_void_p
     k32.CreateMutexW.argtypes = (ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p)
@@ -3363,19 +3469,30 @@ def touch_device(adb):
     return _TOUCH["dev"]
 
 
+def touch_ev(adb):
+    """Packs one raw input event for this emulator. Its size depends on the Android image: 24 bytes on a 64-bit
+    one (BlueStacks Pie64), 16 on a 32-bit one - the wrong size and every touch is garbage."""
+    if "ev" not in _TOUCH:
+        try:
+            abi = adb.shell("getprop ro.product.cpu.abi", timeout=10).strip()
+        except ADBError:
+            abi = ""
+        fmt = "<qqHHI" if "64" in abi or not abi else "<llHHI"
+        _TOUCH["ev"] = lambda t, c, v: struct.pack(fmt, 0, 0, t, c, v & 0xFFFFFFFF)
+        log_file.info(f"touch events: abi {abi!r} -> {struct.calcsize(fmt)} bytes")
+    return _TOUCH["ev"]
+
+
 def zoom_out(adb, times=3, W=1920, H=1080, spread=((460, 900), (1460, 1020))):
     """Two-finger pinch (fingers moving together) = the game's zoom-out, sent straight to the touch device.
     Stops at the game's limit, so extra pinches are harmless. Raw input_event structs are written in one shell
     call per pinch (sendevent costs ~50 ms per event: 3 pinches took 16 s, longer than half the scout timer).
     spread: each finger's start -> end x (swap them to zoom in)."""
-    import base64
     d = touch_device(adb)
     if not d:
         return False
     dev, mx, my = d
-    size = 24  # struct input_event on the 64-bit Android image: timeval 16 + 2 + 2 + 4
-    ev = lambda t, c, v: struct.pack("<qqHHI", 0, 0, t, c, v & 0xFFFFFFFF)
-    assert len(ev(0, 0, 0)) == size
+    ev = touch_ev(adb)
     for _ in range(times):
         steps = []
         for i in range(9):
@@ -3392,9 +3509,26 @@ def zoom_out(adb, times=3, W=1920, H=1080, spread=((460, 900), (1460, 1020))):
     return True
 
 
+def fast_taps(adb, pts, W=1920, H=1080):
+    """Taps as raw touch events written straight to the touch device - the device opened once, each tap held
+    20 ms (with no hold the game drops some). ~0.05 s a tap instead of ~0.19 s for `input tap`, which starts a
+    Java process every time. False if there's no touch device (the caller falls back to `input tap`)."""
+    d = touch_device(adb)
+    if not d or not pts:
+        return False
+    dev, mx, my = d
+    ev = touch_ev(adb)
+    raw = lambda bs: "".join(f"\\{x:03o}" for x in bs)  # printf escapes: exactly 3 octal digits a byte
+    up = raw(ev(3, 47, 0) + ev(3, 57, -1) + ev(1, 330, 0) + ev(0, 0, 0))
+    cmds = [f"printf '{raw(ev(3, 47, 0) + ev(3, 57, 200 + i % 100) + ev(3, 53, int(x / W * mx)) + ev(3, 54, int(y / H * my)) + ev(1, 330, 1) + ev(0, 0, 0))}' >&3; sleep 0.02; printf '{up}' >&3"
+            for i, (x, y) in enumerate(pts)]
+    for i in range(0, len(cmds), 30):
+        adb.shell(f"exec 3> {dev}; " + "; ".join(cmds[i:i + 30]) + "; exec 3>&-", timeout=20)
+    return True
+
+
 def battery():
     """(percent, plugged_in) from Windows, or None on a PC without a battery."""
-    import ctypes
 
     class SPS(ctypes.Structure):
         _fields_ = [("ac", ctypes.c_ubyte), ("flag", ctypes.c_ubyte), ("pct", ctypes.c_ubyte),
@@ -3403,17 +3537,6 @@ def battery():
     if not ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(sps)) or sps.pct == 255 or sps.flag & 128:
         return None
     return sps.pct, sps.ac == 1
-
-
-def lan_ip():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        sock.connect(("10.255.255.255", 1))  # no packet is sent; just picks the Wi-Fi/LAN interface
-        return sock.getsockname()[0]
-    except OSError:
-        return "127.0.0.1"
-    finally:
-        sock.close()
 
 
 # ---------------------------------------------------------------------------
@@ -3520,6 +3643,7 @@ class DropLinePicker(tk.Toplevel):
         if not a:
             return messagebox.showinfo("Drop line", "Click at least the start point.", parent=self)
         fp = self.app.cfg["fixed_points"]
+        self.app.cfg["line_view"] = 2  # picked on the zoomed-out view the bot deploys on (v17+)
         fp[self.keys[0]] = a
         if b:
             fp[self.keys[1]] = b
@@ -3537,16 +3661,13 @@ pretty = lambda n: PRETTY.get(n, n.title())
 PLAN_CATS = ("All", "Heroes", "Army", "Defences", "Guardians", "Traps", "Resources", "Other")
 
 
-class PlannerWindow(tk.Toplevel):
+class PlannerTab(ttk.Frame):
     """Per-account upgrade planner: every upgrade the account has left (from its last scan) as a card with its picture,
     current level and the max for its Town Hall; click a level to queue it. The queue is this account's order."""
 
-    def __init__(self, app, account=None):
-        super().__init__(app)
+    def __init__(self, app, parent):
+        super().__init__(parent)
         self.app, self.cfg = app, app.cfg
-        self.title("Upgrade planner")
-        self.configure(bg=BG)
-        self.geometry(f"{S(1240)}x{S(780)}")
         self._img = {}
         top = ttk.Frame(self, padding=S(14, 12, 14, 6))
         top.pack(fill="x")
@@ -3592,7 +3713,8 @@ class PlannerWindow(tk.Toplevel):
         self.search.bind("<KeyRelease>", lambda e: self.draw_cards())
         ttk.Label(bar, text="🔎", style="Sub.TLabel").pack(side="right")
         self.cards = self._scroller(r, None)
-        self.transient(app)
+        self._rz = None
+        self.cards.canvas.bind("<Configure>", self._resized, add="+")
         self.accounts()
         self.refresh()
 
@@ -3686,7 +3808,10 @@ class PlannerWindow(tk.Toplevel):
                                   " - click Scan while that village is showing in the game.")
         else:
             d = sd.get("discount", 1)
-            self.info.config(text=f"{acc} · {what} {hall or '?'} · scanned {sd.get('time', '?')}"
+            secs, n, builders = time_to_max(sd, self.base.get())
+            left = (f" · {n} upgrades to max this hall: {secs / 86400:,.0f} builder-days ≈ "
+                    f"{secs / 86400 / builders:,.0f} days with {builders} builders" if n else " · ✓ everything max")
+            self.info.config(text=f"{acc} · {what} {hall or '?'}{left} · scanned {sd.get('time', '?')}"
                                   + (" · exact levels from the game's data export" if sd.get("source") == "export"
                                      else "")
                                   + (f" · prices were {round((1 - d) * 100)}% off (Hammer Jam / Gold Pass) - "
@@ -3747,7 +3872,10 @@ class PlannerWindow(tk.Toplevel):
                                 muted=True, bg=BG)
         for c in range(3):
             self.cards.columnconfigure(c, weight=1, uniform="card")
+        self._card_w = self._col_width(self.cards.canvas.winfo_width())  # chips wrap inside it
         for k in g:
+            if k == "home:wall":
+                continue  # bought with gold/elixir, not builders: the dashboard's Walls card
             e = wiki_data()[k]
             levels = sorted(((lv, c, up) for lv, c, up in g[k] if lv is not None), key=lambda x: x[0])
             cur = min((lv for lv, c, up in levels), default=None)
@@ -3775,11 +3903,22 @@ class PlannerWindow(tk.Toplevel):
         self.update_chips()
         self.cards.canvas.yview_moveto(0)
 
+    @staticmethod
+    def _col_width(avail):
+        return max(S(220), avail // 3 - S(12)) if avail > 100 else S(300)
+
+    def _resized(self, e):
+        """Window resized (or first laid out): rebuild the cards at the new column width, once it settles."""
+        if abs(self._col_width(e.width) - getattr(self, "_card_w", 0)) > S(8):
+            if self._rz:
+                self.after_cancel(self._rz)
+            self._rz = self.after(200, lambda: (setattr(self, "_sig", None), self.build_cards()))
+
     def _card(self, k, e, have, cur, mx):
         """One card = ONE canvas (icon, text and level chips are canvas items): a widget per label made the
         window take seconds to show 50 cards."""
-        cv = tk.Canvas(self.cards, bg=CARD, highlightthickness=0, width=S(300), height=S(10))
-        pad, right = S(10), S(290)
+        cv = tk.Canvas(self.cards, bg=CARD, highlightthickness=0, width=self._card_w, height=S(10))
+        pad, right = S(10), self._card_w - S(10)
         ic = self.icon(k, S(56))
         if ic:
             cv.create_image(pad, pad, image=ic, anchor="nw")
@@ -3798,12 +3937,17 @@ class PlannerWindow(tk.Toplevel):
                 "✓ maxed for this hall" if cur is not None and mx and cur >= mx else "(level couldn't be read)")))[3]
             cv.configure(height=y + pad)
             return info
-        x = [pad]
+        x, row = [pad], [0]
 
         def chip(text, cmd, line):
+            line = max(line, row[0])  # stay on the row an earlier chip wrapped to
             t = cv.create_text(x[0] + S(7), line + S(3), text=text, anchor="nw", fill=TEXT,
                                font=("Segoe UI", 9, "bold"))
             x0, y0, x1, y1 = cv.bbox(t)
+            if x1 + S(7) > right and x[0] > pad + S(60):  # no room left on this row: wrap under it
+                cv.move(t, pad - x[0], y1 - y0 + S(12))
+                row[0] = line + y1 - y0 + S(12)
+                x0, y0, x1, y1 = cv.bbox(t)
             r = cv.create_rectangle(x0 - S(7), y0 - S(3), x1 + S(7), y1 + S(3), fill="#3a3a3a", width=0)
             cv.tag_lower(r, t)
             for item in (t, r):
@@ -3971,7 +4115,6 @@ class App(tk.Tk):
         self.geometry(f"{min(S(1240), int(sw * .92))}x{min(S(800), int(sh * .85))}+{int(sw * .04)}+{int(sh * .03)}")
         self.minsize(min(S(1060), int(sw * .8)), min(S(680), int(sh * .7)))
         sv_ttk.set_theme("dark")
-        import tkinter.font as tkfont
         for name in tkfont.names(self):  # the theme sizes fonts in pixels; scale them for high-DPI screens
             f = tkfont.nametofont(name, self)
             if name.startswith("SunValley") and f.cget("size") < 0:
@@ -3984,7 +4127,7 @@ class App(tk.Tk):
         self.started_at = None
         self.vision = Vision()
         self.recent = collections.deque(maxlen=10)
-        self.phone, self.phone_url, self.tunnel = None, "", None
+        self.phone, self.tunnel, self.public_url = None, None, ""
         if not self.cfg["phone_view_key"]:
             self.cfg["phone_view_key"] = secrets.token_urlsafe(9)
             save_config(self.cfg)
@@ -3992,7 +4135,6 @@ class App(tk.Tk):
             key, port = self.cfg["phone_view_key"], self.cfg["phone_view_port"]
             try:
                 self.phone = PhoneView(port, key)
-                self.phone_url = f"http://{lan_ip()}:{port}/?k={key}"
                 exe = os.path.join(BASE_DIR, "cloudflared.exe")
                 if self.cfg["public_link_enabled"] and os.path.isfile(exe):
                     self.tunnel = Tunnel(exe, port, lambda url: self.ui(lambda: self._public_url(url)))
@@ -4068,12 +4210,7 @@ class App(tk.Tk):
         left.pack(side="left")
         ttk.Label(left, text="⚔  Loot Farmer", style="Title.TLabel").pack(anchor="w")
         ttk.Label(left, text="Clash of Clans  ·  unattended resource farming", style="Sub.TLabel").pack(anchor="w")
-        if self.phone_url:
-            link = ttk.Label(left, text="📱  Home Wi-Fi link  (click to copy)", style="Sub.TLabel",
-                             foreground=BLUE, cursor="hand2")
-            link.pack(anchor="w", pady=S(4, 0))
-            link.bind("<Button-1>", lambda e: self._copy(self.phone_url, "Home Wi-Fi link"))
-            self.public_url = ""
+        if self.phone:
             self.public_label = ttk.Label(left, text="🌍  Anywhere link: starting…" if self.tunnel else
                                           "🌍  Anywhere link: add cloudflared.exe next to bot.py",
                                           style="Sub.TLabel", foreground=BLUE if self.tunnel else MUTED,
@@ -4089,22 +4226,20 @@ class App(tk.Tk):
                         cursor="hand2")
         ver.pack(anchor="w")
         ver.bind("<Button-1>", lambda e: self.pick_version())
-        pln = ttk.Label(left, text="🏗  Upgrade planner (per account)", style="Sub.TLabel", foreground=BLUE,
-                        cursor="hand2")
-        pln.pack(anchor="w")
-        pln.bind("<Button-1>", lambda e: self.open_planner())
 
         right = ttk.Frame(head)
         right.pack(side="right")
         self.start_btn = ttk.Button(right, text="▶  Start farming", style="Start.Accent.TButton",
                                     command=self.toggle, width=18)
         self.start_btn.pack(side="right", padx=S(14, 0))
-        ttk.Button(right, text="⟳  Restart app", command=self.restart_app).pack(side="right", padx=S(10, 0))
+        ttk.Button(right, text="⟳  Restart", command=self.restart_app).pack(side="right", padx=S(10, 0))
         self.update_btn = ttk.Button(left, text="⬆  Update available - click to update", style="Accent.TButton",
                                      command=self.do_update)  # under the title: the right-hand row is full
         self._update = None  # shown only when GitHub has a newer version
-        self.loot_btn = ttk.Button(right, text="💰  Loot only", command=lambda: self.toggle("loot"), width=14)
+        self.loot_btn = ttk.Button(right, text="💰  Loot only", command=lambda: self.toggle("loot"))
         self.loot_btn.pack(side="right", padx=S(10, 0))
+        self.wall_btn = ttk.Button(right, text="🧱  Walls only", command=lambda: self.toggle("walls"))
+        self.wall_btn.pack(side="right", padx=S(10, 0))
         self.pill = ttk.Label(right, text="●  Connecting…", style="Pill.TLabel", foreground=AMBER)
         self.batt_label = ttk.Label(right, text="", style="Pill.TLabel", foreground=MUTED)
         self.batt_label.pack(side="right", padx=S(4, 10))
@@ -4115,12 +4250,14 @@ class App(tk.Tk):
         self.dev_combo.pack(side="right", padx=S(6))
         self.dev_combo.bind("<<ComboboxSelected>>", self._device_chosen)
 
-        nb = ttk.Notebook(self)
+        nb = self.nb = ttk.Notebook(self)
         nb.pack(fill="both", expand=True, padx=S(20), pady=S(8, 18))
         tabs = {}
-        for name in ("Dashboard", "Setup", "Settings", "Log"):
-            tabs[name] = ttk.Frame(nb, padding=S(14))
+        for name in ("Dashboard", "Upgrade planner", "Setup", "Settings", "Log"):
+            tabs[name] = ttk.Frame(nb, padding=S(14) if name != "Upgrade planner" else 0)
             nb.add(tabs[name], text=f"  {name}  ")
+        self.planner_tab, self.planner = tabs["Upgrade planner"], None
+        nb.bind("<<NotebookTabChanged>>", self._tab_changed)
         self._build_dashboard(tabs["Dashboard"])
         self._build_setup(tabs["Setup"])
         self._build_settings(tabs["Settings"])
@@ -4129,9 +4266,9 @@ class App(tk.Tk):
     def _build_dashboard(self, tab):
         tab.columnconfigure(0, weight=3)
         tab.columnconfigure(1, weight=2)
-        tab.rowconfigure(1, weight=1)
+        tab.rowconfigure(1, weight=1, minsize=S(200))  # the live view never gets squeezed out
         stats = ttk.Frame(tab)
-        stats.grid(row=0, column=0, columnspan=2, sticky="ew", pady=S(0, 12))
+        stats.grid(row=0, column=0, columnspan=2, sticky="ew", pady=S(0, 10))
         self.stat_labels = {}
         for i, (key, title) in enumerate([("runtime", "Runtime"), ("attacks", "Attacks"),
                                           ("skipped", "Bases skipped"), ("walls", "Walls bought"),
@@ -4139,8 +4276,10 @@ class App(tk.Tk):
                                           ("switches", "Switches"), ("recoveries", "Recoveries"),
                                           ("errors", "Errors")]):
             stats.columnconfigure(i, weight=1, uniform="s")
-            c = self.card(stats, title, row=0, column=i, padx=S(0 if i == 0 else 6, 0))
-            self.stat_labels[key] = ttk.Label(c, text="0" if key != "runtime" else "—", style="CardValue.TLabel")
+            c = ttk.Frame(stats, style="Card.TFrame", padding=S(14, 8, 14, 8))  # compact: room for the cards below
+            c.grid(row=0, column=i, sticky="nsew", padx=S(0 if i == 0 else 6, 0))
+            ttk.Label(c, text=title.upper(), style="CardTitle.TLabel").pack(anchor="w")
+            self.stat_labels[key] = ttk.Label(c, text="0" if key != "runtime" else "—", style="Big.TLabel")
             self.stat_labels[key].pack(anchor="w")
 
         live = self.card(tab, "Live view", row=1, column=0, padx=S(0, 6))
@@ -4166,33 +4305,32 @@ class App(tk.Tk):
         self._photo = None
 
         side = ttk.Frame(tab)
-        side.grid(row=1, column=1, rowspan=2, sticky="nsew", padx=S(6, 0))
+        side.grid(row=1, column=1, sticky="nsew", padx=S(6, 0))
         side.columnconfigure(0, weight=1)
         side.rowconfigure(1, weight=1)
         res = self.card(side, "Resources", row=0, column=0, pady=S(0, 12))
         grid = ttk.Frame(res)
         grid.pack(fill="x")
-        grid.columnconfigure(0, weight=1, uniform="r")
-        grid.columnconfigure(1, weight=1, uniform="r")
+        for i in range(4):
+            grid.columnconfigure(i, weight=1, uniform="r")
         self.res_labels = {}
         for i, (key, label, col) in enumerate([("s_gold", "Your gold", GOLD), ("s_elixir", "Your elixir", PINK),
                                                ("b_gold", "Last base gold", GOLD),
                                                ("b_elixir", "Last base elixir", PINK)]):
             cell = ttk.Frame(grid)
-            cell.grid(row=i // 2, column=i % 2, sticky="ew", pady=S(4))
+            cell.grid(row=0, column=i, sticky="ew")
             ttk.Label(cell, text=label, style="Muted.TLabel").pack(anchor="w")
             self.res_labels[key] = ttk.Label(cell, text="—", foreground=col, style="Res.TLabel")
             self.res_labels[key].pack(anchor="w")
-        lc = self.card(side, "Loot this session (per account)", row=1, column=0, pady=S(0, 12))
+        lc = self.card(side, "Loot this session (per account)", row=1, column=0)
         self.loot_tree = self._tree(lc, ("Account", "Gold", "Gold/hr", "Elixir", "Elixir/hr", "Dark", "Dark/hr", "Att."),
                                     (84, 56, 58, 56, 62, 46, 56, 34), 4)
         self.loot_tree.pack(fill="both", expand=True)
-        mc = self.card(side, "Time to max (this hall, builders only)", row=2, column=0, pady=S(0, 12))
-        self.max_tree = self._tree(mc, ("Account", "Village", "Hall", "Upgrades", "Builder time", "Days"),
-                                   (84, 70, 40, 64, 84, 56), 4)
-        self.max_tree.pack(fill="both", expand=True)
-        self.render_max()
-        act = self.card(tab, "Activity", row=2, column=0, padx=S(0, 6), pady=S(12, 0))
+        wc = self.card(tab, "Walls", row=2, column=0, padx=S(0, 6), pady=S(12, 0))
+        self.walls_cv = tk.Canvas(wc, bg=CARD, highlightthickness=0, height=S(40))
+        self.walls_cv.pack(fill="x")
+        self.walls_cv.bind("<Configure>", lambda e: self.render_walls())
+        act = self.card(tab, "Activity", row=2, column=1, padx=S(6, 0), pady=S(12, 0))
         self.mini_log = self.text_widget(act, 5)
         self.mini_log.pack(fill="both", expand=True)
 
@@ -4214,18 +4352,21 @@ class App(tk.Tk):
         bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=S(0, 10))
         ttk.Label(bar, text="Put the game on the right screen, select a row, then Capture.",
                   style="Muted.TLabel").pack(side="left")
-        ttk.Button(bar, text="Run setup check", command=lambda: self.bg(self.setup_check)).pack(side="right")
-        ttk.Button(bar, text="Ask Groq", command=self.ask_groq).pack(side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Test wall (elixir)", command=lambda: self.test_wall("elixir")).pack(
-            side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Read troop bar", command=self.read_bar).pack(side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Test switch", command=self.test_switch).pack(side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Test lab", command=lambda: self.test_upgrade("lab")).pack(side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Test builder", command=lambda: self.test_upgrade("builder")).pack(
-            side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Test wall (gold)", command=lambda: self.test_wall("gold")).pack(
-            side="right", padx=S(8, 0))
-        ttk.Button(bar, text="Preview screen", command=self.preview_screen).pack(side="right", padx=S(8))
+        ttk.Button(bar, text="Run setup check", style="Accent.TButton",
+                   command=lambda: self.bg(self.setup_check)).pack(side="right")
+        tools = ttk.Menubutton(bar, text="🧰  Tools")
+        menu = tk.Menu(tools, tearoff=False)
+        for label, cmd in (("Preview the emulator screen", self.preview_screen),
+                           ("Read the troop bar (start a search first)", self.read_bar),
+                           ("Test: builder upgrade", lambda: self.test_upgrade("builder")),
+                           ("Test: lab research", lambda: self.test_upgrade("lab")),
+                           ("Test: buy a wall with gold", lambda: self.test_wall("gold")),
+                           ("Test: buy a wall with elixir", lambda: self.test_wall("elixir")),
+                           ("Test: switch account", self.test_switch),
+                           ("Ask Groq what's on screen", self.ask_groq)):
+            menu.add_command(label=label, command=cmd)
+        tools["menu"] = menu
+        tools.pack(side="right", padx=S(8))
 
         body = ttk.Frame(tab)
         body.grid(row=1, column=0, columnspan=2, sticky="nsew")
@@ -4289,21 +4430,40 @@ class App(tk.Tk):
         ttk.Button(foot, text="Discard changes", command=self.load_settings_vars).pack(side="right", padx=S(8))
         ttk.Label(foot, text="Changes apply immediately, even while farming.", style="Muted.TLabel").pack(side="left")
         area = self._scroll_area(tab)
-        cols = [ttk.Frame(area), ttk.Frame(area)]
-        for i, col in enumerate(cols):
-            area.columnconfigure(i, weight=1, uniform="g")
-            col.grid(row=0, column=i, sticky="new")
+        area.columnconfigure(0, weight=1)
         self.svars = {}
-        heights = [0, 0]
-        for group, blurb, fields in SETTINGS:
+        self._settings_cards(area, [(g, b, [f for f in fs if f[0] not in ADVANCED]) for g, b, fs in SETTINGS], 0)
+        more = ttk.Button(area, text="▸  Show advanced settings  (timings, recognition, paths)")
+        more.grid(row=1, column=0, sticky="w", padx=S(6), pady=S(10))
+
+        def advanced():  # built on demand: ~40 rarely-touched fields made the tab slow to open
+            more.destroy()
+            groups = [(f"{g} - advanced", "", [f for f in fs if f[0] in ADVANCED]) for g, _, fs in SETTINGS]
+            self.load_settings_vars(self._settings_cards(area, [x for x in groups if x[2]], 2))
+        more.config(command=advanced)
+        self.load_settings_vars()
+
+    def _settings_cards(self, area, groups, row):
+        """Settings cards in two balanced columns; returns the keys added."""
+        holder = ttk.Frame(area)
+        holder.grid(row=row, column=0, sticky="new")
+        cols = [ttk.Frame(holder), ttk.Frame(holder)]
+        for i, col in enumerate(cols):
+            holder.columnconfigure(i, weight=1, uniform="g")
+            col.grid(row=0, column=i, sticky="new")
+        heights, added = [0, 0], []
+        for group, blurb, fields in groups:
+            if not fields:
+                continue
             col = heights.index(min(heights))
             heights[col] += len(fields) + 2
             c = ttk.Frame(cols[col], style="Card.TFrame", padding=S(16, 12, 16, 14))
             c.pack(fill="x", padx=S(6), pady=S(6))
             c.columnconfigure(1, weight=1)
             ttk.Label(c, text=group, style="Big.TLabel").grid(row=0, column=0, columnspan=2, sticky="w")
-            ttk.Label(c, text=blurb, style="Muted.TLabel", wraplength=S(470)).grid(row=1, column=0, columnspan=2, sticky="w",
-                                                                pady=S(0, 8))
+            if blurb:
+                ttk.Label(c, text=blurb, style="Muted.TLabel", wraplength=S(470)).grid(
+                    row=1, column=0, columnspan=2, sticky="w", pady=S(0, 8))
             for r, (key, label, kind) in enumerate(fields, start=2):
                 if kind is bool:
                     v = tk.BooleanVar()
@@ -4312,10 +4472,12 @@ class App(tk.Tk):
                 else:
                     v = tk.StringVar()
                     ttk.Label(c, text=label).grid(row=r, column=0, sticky="w", pady=S(3), padx=S(0, 12))
-                    ttk.Entry(c, textvariable=v, show="•" if kind == "secret" else "").grid(
+                    (ttk.Combobox(c, textvariable=v, values=kind, state="readonly") if isinstance(kind, tuple) else
+                     ttk.Entry(c, textvariable=v, show="•" if kind == "secret" else "")).grid(
                         row=r, column=1, sticky="ew", pady=S(3))
                 self.svars[key] = (v, kind)
-        self.load_settings_vars()
+                added.append(key)
+        return added
 
     def _build_log(self, tab):
         bar = ttk.Frame(tab)
@@ -4371,7 +4533,7 @@ class App(tk.Tk):
                 elif kind == "call":
                     data()
                 elif kind == "scan":
-                    self.render_max()
+                    self.render_walls()
                     p = getattr(self, "planner", None)
                     if p is not None and p.winfo_exists():
                         p.refresh()
@@ -4407,8 +4569,8 @@ class App(tk.Tk):
         if self.thread and not self.thread.is_alive():
             self.thread = self.bot = None
             self.started_at = None
-            self.start_btn.config(text="▶  Start farming", state="normal")
-            self.loot_btn.config(text="💰  Loot only", state="normal")
+            for btn, text in self.mode_buttons().values():
+                btn.config(text=text, state="normal")
 
     def _append_log(self, level, msg):
         ts = time.strftime("%H:%M:%S ")
@@ -4491,17 +4653,25 @@ class App(tk.Tk):
         return miss
 
     def toggle(self, mode="farm"):
-        mine, other = (self.start_btn, self.loot_btn) if mode == "farm" else (self.loot_btn, self.start_btn)
         if self.thread:
             self.bot.stop_evt.set()
-            self.start_btn.config(text="Stopping…", state="disabled")
-            self.loot_btn.config(state="disabled")
+            for btn, _ in self.mode_buttons().values():
+                btn.config(state="disabled")
+            self.mode_buttons()[self.bot.mode][0].config(text="Stopping…")
             return
         miss = self.missing_setup()
         if miss:
             messagebox.showwarning("Setup not finished", "Finish these on the Setup tab first:\n\n"
                                    + "\n".join("•  " + m for m in miss))
             return
+        if self.cfg["fixed_points"].get("deploy_point") and self.cfg.get("line_view") != 2:
+            if not messagebox.askyesno("Check your troop line", "The bot now zooms fully out before it deploys "
+                                       "(the view is then the same on every account).\n\nIf your troop/spell line "
+                                       "was picked before this update, re-pick it: Setup > Set troop line > 'Zoom "
+                                       "out + pan + refresh'.\n\nStart farming with the current line anyway?"):
+                return
+            self.cfg["line_view"] = 2
+            save_config(self.cfg)
         self.reset_dashboard()
         self.bot = Bot(self.cfg, self.adb, self.emit, mode)
         self.thread = threading.Thread(target=self.bot.run, daemon=True)
@@ -4511,8 +4681,15 @@ class App(tk.Tk):
             url = self.public_url
             pc = os.environ.get("COMPUTERNAME", "a PC")
             self.bg(lambda: post_discord(self.cfg, f"▶️ Farming started on **{pc}**\n{url}"))
-        mine.config(text="■  Stop farming" if mode == "farm" else "■  Stop looting")
-        other.config(state="disabled")
+        for m, (btn, _) in self.mode_buttons().items():
+            if m == mode:
+                btn.config(text={"farm": "■  Stop farming", "loot": "■  Stop looting", "walls": "■  Stop walls"}[m])
+            else:
+                btn.config(state="disabled")
+
+    def mode_buttons(self):
+        return {"farm": (self.start_btn, "▶  Start farming"), "loot": (self.loot_btn, "💰  Loot only"),
+                "walls": (self.wall_btn, "🧱  Walls only")}
 
     def render_loot(self):
         """Per-account session loot + per-hour rates (loot / time since Start), with an all-accounts total."""
@@ -4525,28 +4702,67 @@ class App(tk.Tk):
             items.append(("All accounts", [sum(r[i] for _, r in items) for i in range(4)]))
         self.loot_view = [[acc, short(g), rate(g), short(e), rate(e), short(dk), rate(dk), n]
                           for acc, (g, e, dk, n) in items]
+        if hrs and hrs >= 0.05 and rows:  # from the first attack (~3 min): rough, sharpens as the session goes
+            self.cfg["loot_rate"] = int(sum(r[0] + r[1] for r in rows.values()) / hrs)
+            self.render_walls()
         self.loot_tree.delete(*self.loot_tree.get_children())
         for row in self.loot_view:
             self.loot_tree.insert("", "end", values=row)
 
-    def render_max(self):
-        """Per account + village: upgrade time left to max this hall, and the calendar days that is with every
-        builder kept busy (no boosts / Builder Potions)."""
-        self.max_tree.delete(*self.max_tree.get_children())
+    def render_walls(self):
+        """Per account: a bar of its walls by level (green = max for its Town Hall), what's left to pay and how
+        long that is at the farming rate."""
+        cv = self.walls_cv
+        cv.delete("all")
+        W = max(cv.winfo_width(), S(300))
+        rate = self.cfg.get("loot_rate")
+        short = lambda v: f"{v / 1e9:.2f}B" if v >= 1e9 else f"{v / 1e6:.1f}M" if v >= 1e6 else f"{v / 1e3:.0f}k"
+        if not hasattr(self, "_wall_icon"):
+            try:
+                im = Image.open(os.path.join(WIKI_DIR, wiki_data()["home:wall"]["icon"])).convert("RGBA")
+                im.thumbnail((S(34), S(34)))
+                self._wall_icon = ImageTk.PhotoImage(im)
+            except Exception:
+                self._wall_icon = None
         tagged = set((self.cfg.get("account_tags") or {}).values())
+        y = 0
         for acc, bases in sorted((self.cfg.get("scans") or {}).items()):
             if tagged and acc not in tagged and difflib.get_close_matches(acc, tagged, 1, 0.75):
-                continue  # a misread name of a known account
-            for base in ("home", "builder"):
-                sd = bases.get(base)
-                if not sd:
-                    continue
-                secs, n, builders = time_to_max(sd, base)
-                days = secs / 86400
-                self.max_tree.insert("", "end", values=(
-                    acc, "Home" if base == "home" else "Builder", sd.get("hall") or "?", n,
-                    f"{days:,.0f} d" if days >= 2 else f"{secs / 3600:,.0f} h",
-                    f"{days / builders:,.1f}" if n else "✓ max"))
+                continue
+            sd = bases.get("home") or {}
+            counts, mx, todo, cost = walls_left(sd)
+            if not counts:
+                continue
+            total, x0 = sum(counts.values()), S(46)
+            if self._wall_icon:
+                cv.create_image(0, y + S(2), image=self._wall_icon, anchor="nw")
+            cv.create_text(x0, y, anchor="nw", fill=TEXT, font=("Segoe UI", 10, "bold"),
+                           text=f"{acc}   ·   Town Hall {sd.get('hall') or '?'}")
+            cv.create_text(W - S(4), y, anchor="ne", font=("Segoe UI", 10, "bold"),
+                           fill=GREEN if not todo else GOLD, text="✓  every wall is max" if not todo else
+                           f"{short(cost)} to go" + (f"   ·   ≈ {cost / rate:,.1f} h" if rate else ""))
+            by, bh, x = y + S(24), S(16), x0
+            for lvl in sorted(counts):
+                w = (W - x0 - S(4)) * counts[lvl] / total
+                f = max(0.0, min(1.0, (lvl - (mx or lvl) + 6) / 6))  # older levels redder, nearly-max amber
+                col = GREEN if mx and lvl >= mx else "#%02x%02x%02x" % (int(0xff - 0x1a * f), int(0x6b + 0x49 * f),
+                                                                         int(0x6b - 0x17 * f))
+                cv.create_rectangle(x, by, x + w, by + bh, fill=col, width=0)
+                if w > S(26):
+                    cv.create_text(x + w / 2, by + bh / 2, text=str(lvl), fill="#111", font=("Segoe UI", 8, "bold"))
+                x += w
+            parts = "   ".join(f"lvl {lvl} ×{n}" for lvl, n in sorted(counts.items()) if lvl < (mx or 99))
+            eta = (f"hours at your farming rate of {short(rate)} gold + elixir / h" if rate else
+                   "start farming to estimate the hours") if todo else f"{total} walls at level {mx}"
+            cv.create_text(x0, by + bh + S(6), anchor="nw", fill=MUTED, font=("Segoe UI", 9),
+                           text=(f"{todo} of {total} walls to upgrade   ·   {parts}   ·   " if todo else "") + eta,
+                           width=W - x0)
+            y = cv.bbox("all")[3] + S(12)
+        if not y:
+            cv.create_text(0, 0, anchor="nw", fill=MUTED, font=("Segoe UI", 9),
+                           text="Scan an account in the Upgrade planner to see its walls here.")
+            y = S(24)
+        cv.configure(height=y)
 
     def reset_dashboard(self):
         for k, lbl in self.stat_labels.items():
@@ -4594,11 +4810,13 @@ class App(tk.Tk):
             self.ui(lambda: self.after(800, self._restart_now))
         self.bg(work)
 
-    def open_planner(self):
-        p = getattr(self, "planner", None)
-        if p is not None and p.winfo_exists():
-            return p.lift()
-        self.planner = PlannerWindow(self)
+    def _tab_changed(self, _e=None):
+        """The planner tab is built the first time it's opened (50+ cards: no need to slow the start-up)."""
+        tab = self.nb.nametowidget(self.nb.select())
+        if tab is self.planner_tab:
+            if self.planner is None:
+                self.planner = PlannerTab(self, tab)
+                self.planner.pack(fill="both", expand=True)
 
     def pick_version(self):
         """List the published versions and install the chosen one (older or newer). Settings are kept."""
@@ -4721,8 +4939,10 @@ class App(tk.Tk):
         self.destroy()
 
     # --- settings ---
-    def load_settings_vars(self):
+    def load_settings_vars(self, keys=None):
         for key, (v, kind) in self.svars.items():
+            if keys is not None and key not in keys:
+                continue
             val = self.cfg.get(key, DEFAULTS.get(key))
             if kind is bool:
                 v.set(bool(val))
@@ -5015,7 +5235,11 @@ def selftest():
                                      {"data": 1000002, "lvl": 17, "cnt": 4, "supercharge": 1}, {"data": 1000010, "lvl": 9}],
                        "heroes2": [{"data": 28000003, "lvl": 35}]})
     assert sorted((r["key"], r["level"], r["count"], r["upgrading"]) for r in ex["home"]) == [
-        ("home:elixir collector", 17, 6, False), ("home:mortar", 18, 1, True)], ex
+        ("home:elixir collector", 17, 6, False), ("home:mortar", 18, 1, True), ("home:wall", 9, 1, False)], ex
+    # walls left: mixed levels, each priced up to the TH16 max (17): 2 x (16: 4M + 17: 5M) = 18M, maxed ones free
+    w = walls_left({"hall": 16, "items": [{"key": "home:wall", "level": 15, "count": 2},
+                                          {"key": "home:wall", "level": 17, "count": 3}]})
+    assert w == ({15: 2, 17: 3}, 17, 2, 18_000_000), w
     assert [(r["key"], r["level"]) for r in ex["builder"]] == [("builder:battle machine", 35)], ex
 
     if HAVE_TESS and os.path.exists(DEFAULTS["tesseract_path"]):
@@ -5030,7 +5254,6 @@ def selftest():
 def make_package():
     """LootFarmer_share.zip for a friend: bot + templates + setup, with a config stripped of anything personal
     (API key, phone-link secret, device, paths, account names). Setup.bat fills the paths in on their PC."""
-    import zipfile
     cfg, _ = load_config()
     shared = {k: cfg.get(k, v) for k, v in DEFAULTS.items()}  # drops leftovers from the old bot
     shared.update(groq_api_key="", phone_view_key="", device="", accounts="", emulator_exe_path="",
@@ -5071,13 +5294,11 @@ def published_files():
 
 
 def file_hash(path):
-    import hashlib
     with open(path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
 
 
 def fetch(path, timeout=20, ref="main"):
-    import urllib.request
     url = f"https://raw.githubusercontent.com/{UPDATE_REPO}/{ref}/{path}?t={int(time.time())}"
     with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}),
                                 timeout=timeout) as r:
@@ -5104,7 +5325,6 @@ def apply_update(man):
         local = os.path.join(BASE_DIR, path)
         if os.path.exists(local) and file_hash(local) == digest:
             continue
-        import hashlib
         data = fetch(path.replace(" ", "%20"), ref=man.get("ref", "main"))
         if hashlib.sha256(data).hexdigest() != digest:
             raise RuntimeError(f"{path}: download didn't match the published file - try again")
@@ -5122,7 +5342,6 @@ def apply_update(man):
 def list_versions(limit=30):
     """Published versions, newest first: [(version, date, message, commit)]. Every publish commits manifest.json,
     so its history is the version history."""
-    import urllib.request
     url = f"https://api.github.com/repos/{UPDATE_REPO}/commits?path=manifest.json&per_page={limit}"
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "LootFarmer"}), timeout=20) as r:
         commits = json.load(r)
@@ -5167,7 +5386,6 @@ def publish(message):
 def make_update():
     """LootFarmer_update.zip for a friend who's already set up: only the code + templates. No config.json (keeps
     their drop lines, settings and account setup; new settings get their defaults) and no bundled tools."""
-    import zipfile
     out = os.path.join(BASE_DIR, "LootFarmer_update.zip")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in ("bot.py", "setup.ps1", "Setup.bat", "README.txt"):
@@ -5199,7 +5417,6 @@ if __name__ == "__main__":
         selftest()
     else:
         try:  # crisp text on scaled (125-200%) Windows displays
-            import ctypes
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except Exception:
             pass

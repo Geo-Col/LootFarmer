@@ -1,10 +1,10 @@
 {
- "version": 16,
+ "version": 17,
  "files": {
-  "bot.py": "ecd511a64a8b9211b6678f0829457f7761def7bbaf464fc4b528d7f5a12ead4b",
+  "bot.py": "1391b56c2e57fab843db2e9a2bacdb7bafe024775212d215cbe2c2dc06cec8d6",
   "setup.ps1": "2ef2b8485cb8aecc277dafc238afa8002093f611728e017e8124fd53c7faf25f",
   "Setup.bat": "3d3ea502d691eccb7207f2d7388826a07c48f3f0c8eafa6c0a96df51b88bb8d3",
-  "README.txt": "788f677c3217c29b371ca97eb09ccf5ff83a2aba706e8f1162f054363a6ab3b1",
+  "README.txt": "5e5ebd4c2582976e28beff33666188f259029bee093000218d54e42cc34a6984",
   ".gitignore": "3634583a98a69e99a720ea19320357f23b263b93d00596d54e0a454fb598ca18",
   ".gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da",
   "templates/attack_button.png": "1ad591c3f5f1d0f627aeca092fbfc07523acd067bbfaf71ea7cf5315234bdac4",
@@ -47,7 +47,7 @@
   "templates/wall_gold_upgrade_button.png": "c57bf05bb697c249cadc51995924a4e4e8e13218a0d32f26c980fb09f5904b97",
   "templates/wall_okay_button.png": "7cea4834c382e5f135eb80d00865a74a3a526600bf421f3f0092ebeac73628bf",
   "templates/wall_upgrade_hammers.png": "95a713ab0539e3572f77b6b633cb2eb6e5ed2aff76c50236264adeb291d81bd1",
-  "wiki/buildings.json": "b8f857402c175b98f0900a93dcdd9e355a5c3aa7002bb6f54ae4b3e73f486244",
+  "wiki/buildings.json": "282d7fc816e816a4145d8bcfc18d06b6727eafb34a2d855a459845666de89ca7",
   "wiki/icons/builder_air_bombs.png": "c5e7f9cd88205b9f38c3d993aa3d48e74ba2c2d8de57672f2f870e08e8f0a78e",
   "wiki/icons/builder_archer_tower.png": "9932778fb11278f3d08c87d806fefa6080b09f9816a83776a49b4db54bc1c897",
   "wiki/icons/builder_battle_copter.png": "3bf4c390862dc8e9e007620f6262095a6f326ae8fbe4c77ab1d3c75a2f4dadab",
@@ -129,6 +129,7 @@
   "wiki/icons/home_spring_trap.png": "dea94eda38a8595af8ad23de7fd935637f134825759b6f4103060c4c0aa83a52",
   "wiki/icons/home_tornado_trap.png": "d3578ed57844085e53582c42bee680ea8dde695107086cd71d42b05bdcff368e",
   "wiki/icons/home_town_hall.png": "0e4a9bf0d78c4295bfab3f5b1eb1856cfd80f2a8ea0f4fbc33f78d98fd4ad7b4",
+  "wiki/icons/home_wall.png": "2c4a92feae38f248c81b92a7837b647cd40dab7d5d54d981c0b2a612110160e0",
   "wiki/icons/home_wizard_tower.png": "b7473499f9aa9ca319bcfe838015440b056080268339e926f016b7d5ee8e4e80",
   "wiki/icons/home_workshop.png": "272e4beeacbf446b2d490e192df9bad5d40600fa51cb1257dc73154f947d646b",
   "wiki/icons/home_x_bow.png": "7b390f66b1ad3404c339a0b31dccd8f354257872edd88181d3c63029240715c7"
