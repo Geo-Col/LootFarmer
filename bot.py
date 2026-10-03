@@ -72,7 +72,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Paths, constants, config
 # ---------------------------------------------------------------------------
-APP_VERSION = 18  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
+APP_VERSION = 19  # bumped by `python bot.py --publish`; friends get an Update button when GitHub has a higher one
 UPDATE_REPO = "Geo-Col/lf-app"  # was Geo-Col/LootFarmer (GitHub redirects the old name)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -184,8 +184,7 @@ DEFAULTS = {
     "stop_when_all_busy": True,
     "accounts": "",
     "hold_ms_per_troop": 120,
-    "deploy_select_delay": 0.15,
-    "deploy_tap_delay": 0.08,
+    "deploy_speed": "Fastest",  # troop/spell placing: see DEPLOY_SPEEDS
     "matchmaking_settle_delay": 2.0,
     "return_home_delay": 3.0,
     "bank_spend_enabled": False,
@@ -230,6 +229,9 @@ DEFAULTS = {
     "fixed_points": {},
 }
 
+# Troop / spell placing speed: (pause between taps, pause after picking a card) in seconds. 'Fastest' = the army
+# down in ~1 s; slower ones help a slow PC / emulator that drops taps.
+DEPLOY_SPEEDS = {"Fastest": (0.0, 0.1), "Fast": (0.05, 0.15), "Normal": (0.12, 0.25), "Slow": (0.25, 0.4)}
 # (group, blurb, [(key, label, type)]) - type: bool/int/float/str/"secret", or a tuple of choices (dropdown)
 SETTINGS = [
     ("Loot", "Which bases are worth attacking.", [
@@ -243,6 +245,7 @@ SETTINGS = [
     ]),
     ("Battle", "Deploying and surrendering.", [
         ("deploy_spells", "Also drop spells at the drop point", bool),
+        ("deploy_speed", "Troop & spell placing speed", tuple(DEPLOY_SPEEDS)),
         ("deploy_pan", "Camera corner before deploying", ("top-left", "top-right", "bottom-left", "bottom-right", "off")),
         ("hero_abilities", "Use hero abilities", bool),
         ("hero_ability_delay", "Use abilities this long after deploying (s)", float),
@@ -253,8 +256,6 @@ SETTINGS = [
         ("battle_max_wait", "Surrender after (s) regardless", float),
         ("timer_poll_interval", "Damage check every (s)", float),
         ("hold_ms_per_troop", "Hold time per troop (ms)", int),
-        ("deploy_select_delay", "Pause after selecting unit (s)", float),
-        ("deploy_tap_delay", "Pause between taps (s)", float),
     ]),
     ("Upgrades", "From the home screen: free builders and the lab take the most expensive thing you can "
                  "afford; walls use storage above the threshold.", [
@@ -316,7 +317,7 @@ SETTINGS = [
 RUNTIME_KEYS = ("scans", "plans", "account_tags", "_last_account_idx", "loot_rate", "line_view")  # saved by the bot, not settings
 # Rarely-touched tuning: shown under 'Show advanced settings'
 ADVANCED = {"loot_settle_delay", "loot_recheck_delay", "loot_max_plausible", "hold_deploy", "damage_confirm_count",
-            "timer_poll_interval", "hold_ms_per_troop", "deploy_select_delay", "deploy_tap_delay",
+            "timer_poll_interval", "hold_ms_per_troop",
             "bank_scroll_duration_ms", "bank_scroll_delay", "bank_post_spend_delay", "gfx_profile",
             "emulator_launch_args", "coc_package_name", "coc_activity_name", "watchdog_attack_timeout",
             "game_launch_wait", "emulator_boot_wait", "adb_ready_timeout", "match_confidence",
@@ -1145,6 +1146,19 @@ def settings_drag_start(f):
             start = None
     low = [y for y in runs if y >= 300 * k]  # room to drag at least ~280px up
     return max(low) if low else None
+
+
+def settings_name(frame):
+    """Player name beside the avatar in the Settings window (white on blue), or None."""
+    if not HAVE_TESS:
+        return None
+    k = frame.shape[1] / 1920
+    g = cv2.cvtColor(frame[int(188 * k):int(228 * k), int(860 * k):int(1180 * k)], cv2.COLOR_BGR2GRAY)
+    try:  # plain greyscale reads this chunky font best (binarising it made 'GeoCol2' into 'GeaCol2d')
+        words = pytesseract.image_to_string(cv2.resize(g, None, fx=3, fy=3), config="--psm 7", timeout=5).split()
+    except Exception:
+        return None
+    return words[0] if words and len(words[0]) >= 2 else None
 
 
 def export_items(data):
@@ -2218,7 +2232,7 @@ class Bot:
     def bb_deploy(self, cards):
         a, b = (390, 380), (260, 600)  # left edge of the map: always outside the base, clear of the Boost buttons
         for k, (x, y, kind, n) in enumerate(cards):
-            self.tap((x, y), self.cfg["deploy_select_delay"])
+            self.tap((x, y), self.speed()[1])
             for i in range(n or 1):
                 self.adb.tap(*self.along(a, b, (k + i) % len(cards), len(cards)))
             self.sleep(0.2)
@@ -2684,8 +2698,12 @@ class Bot:
         # strict matches only: a looser one takes look-alike green buttons (Credits, Change Name...)
         more = None
         for _ in range(6):
-            more = self.v.find(self.shot(), "more_settings_button", 0.9)
+            sf = self.shot()
+            more = self.v.find(sf, "more_settings_button", 0.9)
             if more:
+                n = settings_name(sf)  # the name, big and clean, beside the avatar - snapped to names already seen
+                near = n and difflib.get_close_matches(n.lower(), [x.lower() for x in self._names], 1, 0.75)
+                self._settings_name = next((x for x in self._names if near and x.lower() == near[0]), n)
                 break
             self.sleep(0.8)
         data = None
@@ -2725,9 +2743,10 @@ class Bot:
                      "instead.", "warn")
             return False
         tags = self.cfg.setdefault("account_tags", {})
-        acc = tags.get(data["tag"]) or (self._last_name if self._last_name not in (None, "?") else None)
-        if not acc:
-            return False
+        # 1) a tag seen before  2) the top-left name  3) the Settings window's name  4) the tag itself - a scan
+        # never fails just because a name couldn't be read (a fancy name / font / layout on another PC)
+        acc = (tags.get(data["tag"]) or (self._last_name if self._last_name not in (None, "?") else None)
+               or getattr(self, "_settings_name", None) or data["tag"])
         tags[data["tag"]] = self._last_name = acc
         scans = self.cfg.setdefault("scans", {}).setdefault(acc, {})
         for base, items in export_items(data).items():
@@ -2787,7 +2806,8 @@ class Bot:
         if self.scan_export():  # exact levels of both villages, straight from the game
             return self._last_name, kind
         if not self._last_name or self._last_name == "?":
-            raise RuntimeError("couldn't read the account name at the top-left - close any popup and try again")
+            raise RuntimeError("the game's data export didn't come through (Settings > More Settings > Data Export) "
+                               "and the account name couldn't be read - close any popup and try again")
         icon = top_bar(f, kind)[0]
         if not panel_box(f):
             self.tap(icon, 1.3)
@@ -2934,6 +2954,10 @@ class Bot:
         f = k / (n - 1) if n > 1 else 0.5
         return int(a[0] + (b[0] - a[0]) * f), int(a[1] + (b[1] - a[1]) * f)
 
+    def speed(self):
+        """(pause between taps, pause after picking a card) for the chosen placing speed."""
+        return DEPLOY_SPEEDS.get(self.cfg.get("deploy_speed"), DEPLOY_SPEEDS["Fastest"])
+
     def drop(self, a, b, n, card):
         """Deploy n of the selected unit as taps spread evenly along a->b. Never drags: a moving touch scrolls the
         view instead of placing troops. With a single spot (a == b) and hold-to-deploy, a still long-press is used."""
@@ -2946,9 +2970,10 @@ class Bot:
                     break
             return
         pts = [self.along(a, b, k, n) for k in range(n)]
-        gap = max(0.0, c["deploy_tap_delay"])
-        if fast_taps(self.adb, pts):
+        gap = self.speed()[0]
+        if fast_taps(self.adb, pts, gap):
             return
+        gap = max(gap, 0.05)  # `input tap` fallback
         for i in range(0, n, 20):  # one shell call per 20 taps - fast, no round trip per troop
             chunk = pts[i:i + 20]
             self.adb.shell(f"; sleep {gap}; ".join(f"input tap {x} {y}" for x, y in chunk), timeout=10 + len(chunk))
@@ -2968,9 +2993,9 @@ class Bot:
         else:  # else around the middle of the troop line
             sa, sb = self.along(a, b, 1, 4), self.along(a, b, 2, 4)
         for x, y, _, n in spells:  # spells FIRST, as taps spread along their line (a hold doesn't cast them)
-            self.tap((x, y), self.cfg["deploy_select_delay"])
+            self.tap((x, y), self.speed()[1])
             self.drop(sa, sb, n, None)
-        delay = self.cfg["deploy_select_delay"]
+        delay = self.speed()[1]
         for x, y, _, n in troops:  # every troop on the saved line - the camera pans to the same spot each battle
             self.tap((x, y), delay)
             self.drop(a, b, n, (x, y))
@@ -3509,7 +3534,7 @@ def zoom_out(adb, times=3, W=1920, H=1080, spread=((460, 900), (1460, 1020))):
     return True
 
 
-def fast_taps(adb, pts, W=1920, H=1080):
+def fast_taps(adb, pts, gap=0.0, W=1920, H=1080):
     """Taps as raw touch events written straight to the touch device - the device opened once, each tap held
     20 ms (with no hold the game drops some). ~0.05 s a tap instead of ~0.19 s for `input tap`, which starts a
     Java process every time. False if there's no touch device (the caller falls back to `input tap`)."""
@@ -3523,7 +3548,8 @@ def fast_taps(adb, pts, W=1920, H=1080):
     cmds = [f"printf '{raw(ev(3, 47, 0) + ev(3, 57, 200 + i % 100) + ev(3, 53, int(x / W * mx)) + ev(3, 54, int(y / H * my)) + ev(1, 330, 1) + ev(0, 0, 0))}' >&3; sleep 0.02; printf '{up}' >&3"
             for i, (x, y) in enumerate(pts)]
     for i in range(0, len(cmds), 30):
-        adb.shell(f"exec 3> {dev}; " + "; ".join(cmds[i:i + 30]) + "; exec 3>&-", timeout=20)
+        sep = f"; sleep {gap}; " if gap else "; "
+        adb.shell(f"exec 3> {dev}; " + sep.join(cmds[i:i + 30]) + "; exec 3>&-", timeout=20 + gap * 30)
     return True
 
 
